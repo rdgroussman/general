@@ -20,3 +20,8 @@ mv MMETSP_last_seq.fasta.fa_temp MMETSP_last_seq.fasta
 on mac nano:
     find: >\d+\|\*\|
     replace: >
+
+for fasta in $(ls *.fasta); do
+    head -2 $fasta >> JGI_first_lines.fasta
+done
+/Users/rgroussman/data/JGI
