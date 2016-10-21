@@ -31,6 +31,7 @@ parser.add_argument("input_fasta", help="FASTA-formatted input file")
 parser.add_argument("-t", "--tax_id", help="Keep TAXON_ID in new headers", action="store_true")
 parser.add_argument("-m", "--mmetsp_id", help="Keep MMETSP_ID in new headers", action="store_true")
 parser.add_argument("-c", "--campep_id", help="Keep CAMPEP_ID in new headers", action="store_true")
+parser.add_argument("-p", "--pr2", help="PR2 style headers. Do not call with -[tmc]", action="store_true")
 args = parser.parse_args()
 
 global taxon_id
@@ -56,12 +57,15 @@ def determine_type(seq_header):
     """Determines from a fasta header whether it is from the JGI or MMETSP collections.
     JGI example: jgi|Thaps3|23115|estExt_fgenesh1_pg.C_chr_60346
     MMETSP example: CAMPEP_0172341316
-    Returns 'jgi' or 'mmetsp'"""
+    PR2: GQ452862.1.1803_U|Eukaryota|Stramenopiles|Ochrophyta|Bacillariophyta|Bacillariophyta_X|Raphid-pennate|Phaeodactylum|Phaeodactylum+tricornutum
+    Returns 'jgi' or 'mmetsp' or 'pr2'"""
 
     if seq_header.startswith("jgi"):
         return "jgi"
     elif seq_header.startswith("CAMPEP"):
         return "mmetsp"
+    if args.pr2 == True:
+        return 'pr2'
 
 def parse_jgi_header(jgi_header):
     """Parses the JGI headers, returning the organism code (ex, Emihu1) and gene/protein ID"""
@@ -138,6 +142,17 @@ def parse_mmetsp_header(mmetsp_header):
             new_header = binomial + campep_id + mmetsp_id + taxon_id
             return new_header
 
+def parse_pr2_header(pr2_header):
+    """parses a pr2 style header:
+    example: GQ452862.1.1803_U|Eukaryota|Stramenopiles|Ochrophyta|Bacillariophyta|Bacillariophyta_X|Raphid-pennate|Phaeodactylum|Phaeodactylum+tricornutum
+    """
+
+    header_elts = pr2_header.split("|")
+    binomial = header_elts[-1]
+    seq_id = header_elts[0]
+    return binomial + "_" + seq_id
+
+
 # load the input fasta and output fasta
 input_fasta = open(args.input_fasta, 'r')
 outfile_path = build_output_handle(args.input_fasta)
@@ -153,6 +168,8 @@ for seq_record in SeqIO.parse(input_fasta, "fasta"):
         new_header = parse_jgi_header(seq_record.description)
     elif db_type == "mmetsp":
         new_header = parse_mmetsp_header(seq_record.description)
+    elif db_type == "pr2":
+        new_header = parse_pr2_header(seq_record.description)
     # write out seq_record and sequence
     out_record = SeqRecord(seq_record.seq, id= new_header, description="")
     SeqIO.write(out_record, output_fasta, "fasta")
