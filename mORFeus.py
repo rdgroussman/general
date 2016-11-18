@@ -27,6 +27,15 @@ def build_output_handle(infile_path, min_pep_length):
     outfile_path = ".".join(handle_elts)
     return outfile_path
 
+def get_machine_run(infile_path):
+    """Given a FASTA path with the machine run included in format:
+        ex: S11C1_A_1800.H5C5H_combined.6tr.fasta
+    Returns a string with the machine run:
+        ex: H5C5H
+    """
+
+    string_elts = infile_path.split(".")
+    return string_elts[1][:5]
 
 def process_seq(seq_record):
     """
@@ -63,9 +72,13 @@ def process_seq(seq_record):
 
 def write_out_pep(orf, id, counter):
 
-    defline = ">" + id + "_" + str(counter) + "\n"
-    # print defline
-    # print orf
+    """Modifies the defline to include the integer number for output ORFs from each reading frame
+    as well as the machine run that it came from."""
+
+    run_id = ""
+    if args.machine_run == True:
+        run_id = get_machine_run(args.fasta_file) + "_"
+    defline = ">" + run_id + id + "_" + str(counter) + "\n"
     output_file.write(defline)
     output_file.write(str(orf) + "\n")
 
@@ -73,7 +86,7 @@ def write_out_pep(orf, id, counter):
 parser = argparse.ArgumentParser()
 parser.add_argument("fasta_file", help="Translated sequences in FASTA format")
 parser.add_argument("-l", "--min_pep_length", help="Minimum peptide length (integer) to keep", type=int)
-parser.add_argument("-m", "--met_start", help="Only keep a peptide if it starts with M", action="store_true")
+parser.add_argument("-m", "--machine_run", help="Add Illumina machine run ID to output deflines", action="store_true")
 args = parser.parse_args()
 
 # open up the fasta
@@ -85,13 +98,5 @@ output_file = open(output_fasta_handle, 'w')
 for seq_record in SeqIO.parse(fasta_file, "fasta"):
     process_seq(seq_record)
 
-
-
-
 fasta_file.close()
-
-
-
-
-
 output_file.close()
