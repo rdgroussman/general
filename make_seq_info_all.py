@@ -31,7 +31,7 @@ def write_line_to_csv(line):
     for elt in line_elts:
         if tax_pattern.match(elt):
             taxid_found = True
-            outline = line + "," + elt[3:] + "\n"
+            outline = line[1:] + "," + elt[3:] + "\n"
             output_file.write(outline)
 
     if taxid_found == False:

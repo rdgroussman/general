@@ -67,8 +67,6 @@ def process_seq(seq_record):
             if len(orf) >= args.min_pep_length:
                 good_orfs_count += 1
                 write_out_pep(orf, seq_record.id, good_orfs_count)
-                # if orf[0] == "M":
-                #     starts_with_met += 1
 
 def write_out_pep(orf, id, counter):
 
