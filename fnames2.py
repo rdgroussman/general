@@ -125,7 +125,7 @@ def parse_mmetsp_header(mmetsp_header):
 
         # special fixes for samples with unusual CAMERA headers
         if header_elts[2] == 'TAXON_ID=39447 ':
-            return "Gymnodinium_catenatum_" + campep_id
+            return "Gymnodinium_catenatum_" + campep_id + "_tax39447"
         elif header_elts[3] == 'TAXON_ID=96639 ':
             return "labyrinthulid_quahog_parasite_QPX" + campep_id
 

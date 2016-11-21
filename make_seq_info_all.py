@@ -5,15 +5,12 @@
 
 """
 make_seq_info_all.py
-
 Takes as input a trimmed FASTA file with taxid included in a special field in the defline:
 Ex:
 >Thaps3_262753_tax296543
 >Heterosigma_akashiwo_0194584208_MMETSP0292_tax39354
-
 # "seq_info_all.csv must contain at least two columns,
 # one column containing the names of the fasta sequences in your tree (seqname) and one with the corresponding tax ids (tax_id)"
-
 """
 
 import argparse
@@ -23,7 +20,6 @@ import re
 def write_line_to_csv(line):
     """Given a FASTA defline, outputs the original sequence description
     along with the tax id, separated by a comma.
-
     If it doesn't find a taxid, writes out an error message for the seq."""
 
     taxid_found = False
@@ -31,12 +27,14 @@ def write_line_to_csv(line):
     for elt in line_elts:
         if tax_pattern.match(elt):
             taxid_found = True
-            outline = line[1:] + "," + elt[3:] + "\n"
+            tax_id = tax_pattern.findall(elt)[0][3:]
+            outline = line[1:] + "," + tax_id + "\n"
             output_file.write(outline)
 
     if taxid_found == False:
         print "Tax ID not found for seq:", line
-
+        outline = line[1:] + "," + "\n"
+        output_file.write(outline)
 
 # parse incoming argument
 parser = argparse.ArgumentParser()
@@ -45,7 +43,7 @@ parser.add_argument("-o", "--output", help="Output file name (Default: seq_info_
 args = parser.parse_args()
 
 # here's our regular expression for finding taxids:
-tax_pattern = re.compile("tax[0-9]+")
+tax_pattern = re.compile("(tax[0-9]+)")
 
 # open up the fasta
 fasta_file = open(args.fasta_file, 'r')
