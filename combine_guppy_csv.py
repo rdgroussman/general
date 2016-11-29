@@ -186,8 +186,8 @@ def get_edge_data(edge_num, sample_run_headers):
         norm_count_sum = 0
         rep_count = 0
         for machine_run in ReadCountsDict[sample_name]:
+            rep_count += 1
             if edge_num in ReadCountsDict[sample_name][machine_run]:
-                rep_count += 1
                 norm_count_sum += ReadCountsDict[sample_name][machine_run][edge_num]['norm_count']
                 tax_id = ReadCountsDict[sample_name][machine_run][edge_num]['tax_id']
         if rep_count >= 1:
@@ -216,20 +216,16 @@ def write_out_csv(outfile_path):
 
     # sort sample headers
     sorted_sample_headers = sorted(sample_headers)
-    print sample_headers
-    print sorted_sample_headers
 
-    # print sample_run_headers
-    outfile_header = "edge_num,tax_id," + ",".join(sorted_sample_headers)
+    outfile_header = "edge_num,tax_id," + ",".join(sorted_sample_headers) + "\n"
 
     output_csv.write(outfile_header)
-    print outfile_header
 
     tax_id = None
     for edge_num in sorted(edge_num_set):
         avg_norm_count_list, tax_id = get_edge_data(edge_num, sorted_sample_headers)
-        outline = str(edge_num) + "," + str(tax_id) + "," + ",".join(avg_norm_count_list)
-        print outline
+        outline = str(edge_num) + "," + str(tax_id) + "," + ",".join(avg_norm_count_list) + "\n"
+        output_csv.write(outline)
 
 
 
