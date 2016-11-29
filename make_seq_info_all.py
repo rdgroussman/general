@@ -56,6 +56,10 @@ else:
 
 output_file = open(output_handle, 'w')
 
+# first, write out a standard header:
+out_header='seqname,tax_id' + "\n"
+output_file.write(out_header)
+
 # for each sequence in the fasta file;
 for line in fasta_file:
     if line.startswith(">"):
