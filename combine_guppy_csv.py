@@ -36,6 +36,12 @@ INPUT_LIST="/Users/rgroussman/data/SCOPE/diel1/single_gene/LOV8.ddp/test_combine
 # INPUT_LIST="/Users/rgroussman/data/SCOPE/diel1/single_gene/LOV8.ddp/test_combine/test_csv_list.txt"
 outfile_path="test_output.csv"
 
+# on bloom:
+# NORM_COUNTS_PATH="/mnt/ryan/diel1/diel1_NORM_FACTORS.csv"
+# INPUT_LIST="csv_list.txt"
+# outfile_path="combined_norm_factors_output.csv"
+
+
 def process_norm_counts(NORM_COUNTS_PATH):
     """
     Takes in a CSV file with sample_name,NORM_FACTOR as columns:
