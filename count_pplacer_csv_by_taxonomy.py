@@ -147,8 +147,9 @@ def initialize_taxa_counts_dict():
 # parse treecolor info
 TreecolorDict = parse_treecolor_info(TCInfo)
 
-# Initialize TaxaCountsDict
+# Initialize TaxaCountsDict and Other count
 TaxaCountsDict = initialize_taxa_counts_dict()
+other_counter = 0
 
 # Initialize NormFactorsDict
 NormFactorsDict = initialize_norm_counts_dict()
@@ -178,12 +179,12 @@ for line in in_csv:
 		if classification in TreecolorDict[group_name]:
 			TaxaCountsDict[group_name] += 1
 			taxid_found = True
+	if taxid_found == False:
+		other_counter += 1
 
 
-# Normalize the results through normalize_counts in a new dictionary
 
 # Spit out results!
-# results_order = ['Alveolata', 'Amoebozoa', 'Bacillariophyta', 'Cryptophyta', 'Excavata','Glaucophyta','Haptophyta','NonDiatomStramenopile','Opisthokonta','Rhizaria','Rhodophyta','Viridiplantae']
 
 # print results_order
 # print sorted(TaxaCountsDict.keys())
@@ -193,8 +194,9 @@ counts_results = [sample_name]
 for group_name in sorted(TaxaCountsDict.keys()):
 	norm_count = normalize_counts(summed_sample_name, TaxaCountsDict[group_name])
 	counts_results.append(str(norm_count))
+counts_results.append(str(other_counter))
 # line below prints the header
-# print 'sample_name' + "," + ",".join(sorted(TaxaCountsDict.keys()))
+# print 'sample_name' + "," + ",".join(sorted(TaxaCountsDict.keys())) + ",Other"
 
 # here's our results...
 print ",".join(counts_results)

@@ -1,110 +1,166 @@
 #!/usr/bin/env python
 
-import sys
 import re
-# import xml.etree.ElementTree as ET
+import xml.etree.ElementTree as ET
 from Bio import Phylo
-
-def build_output_handle(infile_path):
-    handle_elts = infile_path.split(".")
-    handle_elts.insert(-1,"col")
-    out_xml_path = ".".join(handle_elts)
-    return out_xml_path
-
-
-input_xml_path = sys.argv[1]
+import argparse
 
 # load tab delimited file containing list and color information
-TCInfoPath = "/Users/rgroussman/Dropbox/Armbrust/bioinfo/scripts/treecolor/MarineRef2/treecolors.csv"
-TCInfo = open(TCInfoPath, 'r')
+TCInfoPath = "/Users/rgroussman/Dropbox/Armbrust/bioinfo/scripts/treecolor/MarineRef2_plus_internal/"
 
-TreecolorDict = {} # treecolor information dictionary
+# Default colors for internal nodes:
+default_rgb = ('150','150','150')
 
-for line in TCInfo:
-	line_elts = line.split(",")	# tab delimited file
-	ListFile = line_elts[0]	# the group name
-	ListFilePath = r'/Users/rgroussman/Dropbox/Armbrust/bioinfo/scripts/treecolor/MarineRef2/' + ListFile.strip()
-	group_name = ListFile.split(".")[0]	# pop off the prefix, this is the clade name
-	tax_file = open(ListFilePath, 'r') # open the list file
-	tax_list = []
-	for tax_id in tax_file: # create a list of tax_id from each list file
-		tax_id = tax_id.strip()
-		tax_list.append(tax_id.strip())
-	RedVal = line_elts[2] # Collect RGB color values.
-	GreenVal = line_elts[3]
-	BlueVal = line_elts[4]
-	ColorString = r"<color><red>" + RedVal.strip() + "</red><green>" + GreenVal.strip() + "</green><blue>" + BlueVal.strip() + "</blue></color>" + "\n" # build ColorString
-	TreecolorDict[group_name] = (ColorString,tax_list) # Color values and MMETSP# assigned as values to group names
+def build_output_handle(infile_path):
+	handle_elts = infile_path.split(".")
+	handle_elts.insert(-1,"col")
+	out_xml_path = ".".join(handle_elts)
+	return out_xml_path
+
+def build_color_dict(TCInfoPath):
+	"""
+	Builds a dictionary of the color scheme from treecolors.csv
+
+	"""
+
+	TCInfo = open((TCInfoPath + "/treecolors.csv"), 'r')
+
+	TreecolorDict = {} # treecolor information dictionary
+	for line in TCInfo:
+		line_elts = line.split(",")	# tab delimited file
+		ListFile = line_elts[0]	# the group name
+		ListFilePath = TCInfoPath + ListFile.strip()
+		group_name = ListFile.split(".")[0]	# pop off the prefix, this is the clade name
+		tax_file = open(ListFilePath, 'r') # open the list file
+		tax_set = set([])
+		for tax_id in tax_file: # create a list of tax_id from each list file
+			tax_id = tax_id.strip()
+			tax_set.add(tax_id.strip())
+		RedVal = line_elts[2] # Collect RGB color values.
+		GreenVal = line_elts[3]
+		BlueVal = line_elts[4]
+		rgb_values = (RedVal.strip(), GreenVal.strip(), BlueVal.strip())
+		TreecolorDict[group_name] = (rgb_values,tax_set) # Color values and MMETSP# assigned as values to group names
+
+	return TreecolorDict
+
+def test_treecolor_dict(TreecolorDict):
+	"""
+	Tests whether or not there are overlapping tax_id between the different
+	groups. Prints a warning to stdout if yes; no message if not."""
+
+	# Test that there are no overlapping tax_ids between the different groups in TreecolorDict:
+	tax_group_list = TreecolorDict.keys()
+	while len(tax_group_list) > 0:
+		any_group = tax_group_list.pop()
+		# print any_group
+		# print TreecolorDict[any_group][1]
+		for other_group in tax_group_list:
+			overlap = TreecolorDict[any_group][1].intersection(TreecolorDict[other_group][1])
+			if len(overlap) > 0:
+				print "Overlap between ", any_group, "and", other_group
+				print overlap
+
+def retrieve_tax_id(defline):
+	"""
+	Given a sequence defline; will retrieve the NCBI taxonomy ID given
+	somewhere in the defline as '_taxXXXXXX'
+	e.g.: Stauroneis_constricta_0119572860_MMETSP1352_tax265584/330-455
+	Returns the NCBI taxi_id (e.g. 265584)
+	"""
+
+	# Check if there is a tax_id marker to be found:
+	if re.search("(_tax[0-9]+)", defline):
+		# if it's found, retrieve the tax_id number and return it
+		tax_id = re.sub(r'.*_tax([0-9]+).*', r'\1', defline)
+		return tax_id
+	else:
+		print "No tax_id found for", defline
+		return None
+
+def get_colors_from_color_dict(tax_id):
+	"""
+	Given an NCBI tax_id, looks up the tax_id in TreecolorDict and
+	returns a tuple with the R, G, B values if present. Otherwise, returns none.
+	"""
+
+	for tax_group in TreecolorDict:
+		if tax_id in TreecolorDict[tax_group][1]:
+			return TreecolorDict[tax_group][0]
+
+def change_taxa_colors(parent, rgb_values):
+	"""
+	Changes the colors in the XML file for a given tax_id in accordance with
+	the user parameters in the color dictionary.
+	"""
+
+	if parent.find('{http://www.phyloxml.org}color') != None:
+		color = parent.find('{http://www.phyloxml.org}color')
+		color.find('{http://www.phyloxml.org}red').text = rgb_values[0]
+		color.find('{http://www.phyloxml.org}green').text = rgb_values[1]
+		color.find('{http://www.phyloxml.org}blue').text = rgb_values[2]
+	elif parent.find('{http://www.phyloxml.org}color') == None and args.all_leaves == True:
+		ET.SubElement(parent, '{http://www.phyloxml.org}color')
+		color = parent.find('{http://www.phyloxml.org}color')
+		ET.SubElement(color, '{http://www.phyloxml.org}red')
+		ET.SubElement(color, '{http://www.phyloxml.org}green')
+		ET.SubElement(color, '{http://www.phyloxml.org}blue')
+		color.find('{http://www.phyloxml.org}red').text = rgb_values[0]
+		color.find('{http://www.phyloxml.org}green').text = rgb_values[1]
+		color.find('{http://www.phyloxml.org}blue').text = rgb_values[2]
 
 
-# load infiles
-# in_xml = open(input_xml_path, 'r')
+parser = argparse.ArgumentParser()
+parser.add_argument("input_xml", help="XML-formatted phylogenetic tree")
+parser.add_argument("-a", "--all_leaves", help="Color all leaves", action="store_true")
+parser.add_argument("-f", "--fat_tree", help="Color leaves with any given width", action="store_true")
+parser.add_argument("-m", "--min_width", help="Used with --fat_tree; specify the minimum width to color the leaf", type=float)
+parser.add_argument("-o", "--out_file", help="Specify the name of the outfile", type=str)
 
-# load out_xml
-out_xml_path = build_output_handle(input_xml_path)
-# out_xml = open(out_xml_path,'w')
+args = parser.parse_args()
 
+input_xml_path = args.input_xml
+TreecolorDict = build_color_dict(TCInfoPath)
+test_treecolor_dict(TreecolorDict)
 
-# go through the xml file.
-# if a line has color, change the color to the value in TreecolorDict if there is one.
+if args.out_file != None:
+	out_xml_path = args.out_file
+else:
+	out_xml_path = build_output_handle(input_xml_path)
 
-# write it out and save it.
-
-## example block ##
-
-### Bio.Phylo test code ####
-# tree = Phylo.read(input_xml_path, 'phyloxml')
-# for clade in tree.find_clades(name=True):
-#     print clade.name
-# Phylo.write(tree, out_xml_path, "phyloxml")
-############################
 
 ### test code ### elementtree
-# input_xml_path = "test.xml"
-# in_xml = ET.parse(input_xml_path)
-# root = in_xml.getroot()
-#
-# for taxon in root.iter('name'):
-#     print taxon.attrib
-# for child in root[0][1][1]:
-#     print child.tag
-# # Write back to a file
-# in_xml.write(out_xml_path, xml_declaration=True)
+in_xml = ET.parse(input_xml_path)
+root = in_xml.getroot()
+
+
+for parent in root.getiterator():
+	# print parent.tag
+	# if the element is a clade and does not have a name (not a leaf):
+	if parent.tag == '{http://www.phyloxml.org}clade' and parent.find('{http://www.phyloxml.org}name') == None:
+		change_taxa_colors(parent, default_rgb)
+	# if the element is a 'clade' and contains a 'name' then:
+	if parent.tag == '{http://www.phyloxml.org}clade' and parent.find('{http://www.phyloxml.org}name') != None:
+		# for child in parent:
+		# 	print child.tag
+		name_tag = parent.find('{http://www.phyloxml.org}name').text
+		# print name_tag
+		# print parent.text
+		tax_id = retrieve_tax_id(parent.find('{http://www.phyloxml.org}name').text)
+		if tax_id != None:
+			rgb_values = get_colors_from_color_dict(tax_id)
+			if rgb_values != None:
+				change_taxa_colors(parent, rgb_values)
+			elif rgb_values == None:
+				print "### tax_id not in a group:", tax_id
+
+# Iteratively run through the parent nodes; if all of their children
+# share the same color scheme, then give the parent the same color.
+
+# Write back to a file
+in_xml.write(out_xml_path, xml_declaration=True)
 #################
 
-def change_default_color(True):
-    pass
-
-
-
-### OLD CODE ###
-################
-xmlLineCount = 0	# count the progression of lines in the xml
-InsertColorHere = 0 # this will be used to insert the color tag
-for line in in_xml:
-	if xmlLineCount not in {0,1,2,3}: #skip the first four lines; internal file name also uses <name>
-		if line.find("<name>") >= 0: # if <name> is found on the line begin the hunt!
-            InsertColor = False
-			tax_id = "Null"
-			line_elts = line.split("_") # separate the ID by underscore
-			for item in line_elts:
-				if item.find("tax") >= 0: # Find and collect the grindstone id (NCBI tax_id)
-					tax_id = item[3:].strip()
-			for Group in TreecolorDict.keys(): # search through the tc info dict for presence of tax_id
-				GroupList = TreecolorDict[Group]
-				if tax_id in GroupList[1]: # if the tax_id is in a list belonging to one of the groups, return the color value for that group
-                    InsertColor = True
-					ColorString = GroupList[0]
-					InsertColorHere = xmlLineCount + 2
-		elif line.find("<branch_length>") == -1 and InsertColorHere > xmlLineCount: # if branch length is not indicated we'll need to insert the color string earlier
-			InsertColorHere -= 1
-
-		if xmlLineCount == InsertColorHere:
-			out_xml.write(ColorString)
-
-	out_xml.write(line)
-	xmlLineCount += 1 # increment the loop counter by one
-### OLD CODE ###
-################
-
-# # close it all!
+# Need to 'reset' the xml for strange formatting reasons:
+tree = Phylo.read(out_xml_path, 'phyloxml')
+Phylo.write(tree, out_xml_path, "phyloxml")
