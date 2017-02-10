@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys
+import argparse
 
 
 # count_pplacer_csv_by_taxonomy.py
@@ -20,6 +20,13 @@ against a list of NCBI tax_ids for groups of particular taxonomy (e.g. Bacillari
 # load tab delimited file containing list and color information
 TCInfoPath = "/Users/rgroussman/Dropbox/Armbrust/bioinfo/scripts/treecolor/MarineRef2_plus_internal/treecolors.csv"
 TCInfo = open(TCInfoPath, 'r')
+
+parser = argparse.ArgumentParser()
+parser.add_argument("input_csv", help="CSV-formatted input file")
+parser.add_argument("-h", "--high_level", help="Print high-level results", action="store_true")
+parser.add_argument("-t", "--top_taxa", help="Print top taxa per group", action="store_true")
+args = parser.parse_args()
+
 
 def parse_treecolor_info(TCInfo_CSV):
 
@@ -144,6 +151,45 @@ def initialize_taxa_counts_dict():
 
 	return TaxaCountsDict
 
+def print_high_level_results():
+	"""Prints the high-level taxonomic results to stdout"""
+
+	# Spit out results!
+	counts_results = [sample_name]
+	# sample_name,
+	for group_name in sorted(TaxaCountsDict.keys()):
+		norm_count = normalize_counts(summed_sample_name, TaxaCountsDict[group_name])
+		counts_results.append(str(norm_count))
+	counts_results.append(str(other_counter))
+	# line below prints the header
+	# print 'sample_name' + "," + ",".join(sorted(TaxaCountsDict.keys())) + ",Other"
+
+	# here's our results...
+	print ",".join(counts_results)
+
+def print_top_taxa_per_group(group):
+	"""Given a group, will run through all of the tax_id that run under its
+	umbrella. Prints out a list of tax_ids belonging to group along with
+	the proportion of hits in the file (a quick way to normalize)"""
+
+	# header
+	top_taxa_header = "sample_name,group,tax_id,fraction_of_all_hits"
+
+
+	for taxa in TreecolorDict[group]:
+		if taxa in EdgeCountDict.keys():
+			hit_fraction = EdgeCountDict[taxa] / float(line_counter)
+			print sample_name + "," + group + "," + str(taxa) + "," + str(hit_fraction)
+
+def add_classification_to_edgedict(classification):
+	"""Given an NCBI tax_id classification, will add it to a dictionary if
+	it's not there with value 1, otherwise will increment counter"""
+
+	if classification in EdgeCountDict.keys():
+		EdgeCountDict[classification] += 1
+	elif classification not in EdgeCountDict:
+		EdgeCountDict[classification] = 1
+
 # parse treecolor info
 TreecolorDict = parse_treecolor_info(TCInfo)
 
@@ -155,15 +201,21 @@ other_counter = 0
 NormFactorsDict = initialize_norm_counts_dict()
 
 # now open up the guppy csv file
-input_csv_path = sys.argv[1]
+input_csv_path = args.input_csv
 in_csv = open(input_csv_path, 'r')
 
+# Counts per edge: this dict stores raw counts for each edge.
+EdgeCountDict = {}
+
 summed_sample_name = False
+line_counter = 0
 in_csv.readline()   # skip the first line
 for line in in_csv:
+	line_counter += 1
 	line_elts = line.split(",")
 	# pull out the classification (element 10)
 	classification = line_elts[10]
+	add_classification_to_edgedict(classification)
 	# pull out the origin name (from element [0][1])
 	origin = line_elts[0]
 	sample_name = origin.split(".")[1]
@@ -182,21 +234,8 @@ for line in in_csv:
 	if taxid_found == False:
 		other_counter += 1
 
-
-
-# Spit out results!
-
-# print results_order
-# print sorted(TaxaCountsDict.keys())
-
-counts_results = [sample_name]
-# sample_name,
-for group_name in sorted(TaxaCountsDict.keys()):
-	norm_count = normalize_counts(summed_sample_name, TaxaCountsDict[group_name])
-	counts_results.append(str(norm_count))
-counts_results.append(str(other_counter))
-# line below prints the header
-# print 'sample_name' + "," + ",".join(sorted(TaxaCountsDict.keys())) + ",Other"
-
-# here's our results...
-print ",".join(counts_results)
+if args.high_level == True:
+	print_high_level_results()
+elif args.top_taxa == True:
+	for group in TreecolorDict.keys():
+		print_top_taxa_per_group(group)
