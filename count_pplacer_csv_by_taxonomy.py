@@ -23,10 +23,13 @@ TCInfo = open(TCInfoPath, 'r')
 
 parser = argparse.ArgumentParser()
 parser.add_argument("input_csv", help="CSV-formatted input file")
-parser.add_argument("-h", "--high_level", help="Print high-level results", action="store_true")
+parser.add_argument("-g", "--high_level_groups", help="Print high-level group results", action="store_true")
 parser.add_argument("-t", "--top_taxa", help="Print top taxa per group", action="store_true")
-args = parser.parse_args()
+parser.add_argument("-i", "--ingroup_edges", help="Only count edge numbers in this file", type=str)
 
+args = parser.parse_args()
+other_counter = 0
+outgroup_counter = 0
 
 def parse_treecolor_info(TCInfo_CSV):
 
@@ -133,7 +136,6 @@ def initialize_taxa_counts_dict():
 
 	# Initialize the taxa counts dictionary
 	TaxaCountsDict = {
-	'Alveolata' : 0,
 	'Amoebozoa' : 0,
 	'Bacillariophyta' : 0,
 	'Cryptophyta' : 0,
@@ -155,14 +157,17 @@ def print_high_level_results():
 	"""Prints the high-level taxonomic results to stdout"""
 
 	# Spit out results!
-	counts_results = [sample_name]
+	counts_results = [fix_sample_name(sample_name)]
 	# sample_name,
 	for group_name in sorted(TaxaCountsDict.keys()):
 		norm_count = normalize_counts(summed_sample_name, TaxaCountsDict[group_name])
+		norm_count_other = normalize_counts(summed_sample_name, other_counter)
+		norm_count_outgroup = normalize_counts(summed_sample_name, outgroup_counter)
 		counts_results.append(str(norm_count))
-	counts_results.append(str(other_counter))
+	counts_results.append(str(norm_count_other))
+	counts_results.append(str(norm_count_outgroup))
 	# line below prints the header
-	# print 'sample_name' + "," + ",".join(sorted(TaxaCountsDict.keys())) + ",Other"
+	# print 'sample_name' + "," + ",".join(sorted(TaxaCountsDict.keys())) + ",Other,Outgroups"
 
 	# here's our results...
 	print ",".join(counts_results)
@@ -175,11 +180,11 @@ def print_top_taxa_per_group(group):
 	# header
 	top_taxa_header = "sample_name,group,tax_id,fraction_of_all_hits"
 
-
+	# for our taxa in TreecolorDict
 	for taxa in TreecolorDict[group]:
 		if taxa in EdgeCountDict.keys():
 			hit_fraction = EdgeCountDict[taxa] / float(line_counter)
-			print sample_name + "," + group + "," + str(taxa) + "," + str(hit_fraction)
+			print fix_sample_name(sample_name) + "," + group + "," + str(taxa) + "," + str(hit_fraction)
 
 def add_classification_to_edgedict(classification):
 	"""Given an NCBI tax_id classification, will add it to a dictionary if
@@ -190,12 +195,60 @@ def add_classification_to_edgedict(classification):
 	elif classification not in EdgeCountDict:
 		EdgeCountDict[classification] = 1
 
+def process_ingroup_list(ingroup_file_path):
+	""" Process a list of edge numbers for the ingroup and their inclusive
+	internal edge numbers, as noted in a .jplace file. If given as
+	argument, this script will only count these edges. Example:
+	72
+	73
+	74
+	...
+	"""
+
+	ingroup_edges_file = open(args.ingroup_edges, 'r')
+	ingroup_edges_set = set([])
+	for edge in ingroup_edges_file:
+		edge = edge.strip()
+		ingroup_edges_set.add(edge)
+	return ingroup_edges_set
+
+def search_and_count_treecolor_dict(tax_id):
+	"""go through each tax list in TreecolorDict
+	if it matches a list, increment tally in TaxaCountsDict
+	"""
+	global other_counter
+	global outgroup_counter
+
+	taxid_found = False
+	for group_name in TreecolorDict:
+		if tax_id in TreecolorDict[group_name]:
+			TaxaCountsDict[group_name] += 1
+			taxid_found = True
+	if taxid_found == False:
+		other_counter += 1
+
+def fix_sample_name(sample_name):
+	"""Fixes some sample names to standardize format.
+	E.g. S8C1 > S08C1, etc """
+
+	if sample_name.startswith("S6C1"):
+		sample_name = sample_name.replace("S6C1", "S06C1")
+	if sample_name.startswith("S7C1"):
+		sample_name = sample_name.replace("S7C1", "S07C1")
+	if sample_name.startswith("S8C1"):
+		sample_name = sample_name.replace("S8C1", "S08C1")
+	return sample_name
+
+
+# if ingroup list file is provided, load the file:
+if args.ingroup_edges != None:
+	ingroup_edges_set = process_ingroup_list(args.ingroup_edges)
+
 # parse treecolor info
 TreecolorDict = parse_treecolor_info(TCInfo)
 
-# Initialize TaxaCountsDict and Other count
+# Initialize TaxaCountsDict and Other count and Outgroup count
 TaxaCountsDict = initialize_taxa_counts_dict()
-other_counter = 0
 
 # Initialize NormFactorsDict
 NormFactorsDict = initialize_norm_counts_dict()
@@ -213,8 +266,8 @@ in_csv.readline()   # skip the first line
 for line in in_csv:
 	line_counter += 1
 	line_elts = line.split(",")
-	# pull out the classification (element 10)
 	classification = line_elts[10]
+	edge_num = line_elts[3]
 	add_classification_to_edgedict(classification)
 	# pull out the origin name (from element [0][1])
 	origin = line_elts[0]
@@ -224,18 +277,19 @@ for line in in_csv:
 	elif summed_sample_name != sample_name:
 		print "Multiple samples in CSV file!"
 		summed_sample_name = "Multiple"
-	# go through each tax list in TreecolorDict
-	# if it matches a list, increment tally in TaxaCountsDict
-	taxid_found = False
-	for group_name in TreecolorDict:
-		if classification in TreecolorDict[group_name]:
-			TaxaCountsDict[group_name] += 1
-			taxid_found = True
-	if taxid_found == False:
-		other_counter += 1
+	if args.ingroup_edges != None:
+		if edge_num in ingroup_edges_set:
+			search_and_count_treecolor_dict(classification)
+		elif edge_num not in ingroup_edges_set:
+			outgroup_counter += 1
+	elif args.ingroup_edges == None:
+		search_and_count_treecolor_dict(classification)
 
-if args.high_level == True:
+if args.high_level_groups == True:
 	print_high_level_results()
 elif args.top_taxa == True:
 	for group in TreecolorDict.keys():
 		print_top_taxa_per_group(group)
+		# also 'other' and 'outgroup'
+	print fix_sample_name(sample_name) + "," + "Other" + "," + "1" + "," + str(other_counter / float(line_counter))
+	print fix_sample_name(sample_name) + "," + "Outgroups" + "," + "1" + "," + str(outgroup_counter / float(line_counter))
