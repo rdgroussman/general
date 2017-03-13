@@ -17,21 +17,23 @@ against a list of NCBI tax_ids for groups of particular taxonomy (e.g. Bacillari
 
 """
 
-# load tab delimited file containing list and color information
-TCInfoPath = "/Users/rgroussman/Dropbox/Armbrust/bioinfo/scripts/treecolor/MarineRef2_plus_internal/treecolors.csv"
-TCInfo = open(TCInfoPath, 'r')
-
 parser = argparse.ArgumentParser()
 parser.add_argument("input_csv", help="CSV-formatted input file")
 parser.add_argument("-g", "--high_level_groups", help="Print high-level group results", action="store_true")
 parser.add_argument("-t", "--top_taxa", help="Print top taxa per group", action="store_true")
 parser.add_argument("-i", "--ingroup_edges", help="Only count edge numbers in this file", type=str)
+parser.add_argument("-c", "--treecolor_csv", help="Specify path to an alternate treecolor.csv-like file.", type=str)
+parser.add_argument("-e", "--print_header", help="Print header for csv and quit", action="store_true")
+
 
 args = parser.parse_args()
 other_counter = 0
 outgroup_counter = 0
 
-def parse_treecolor_info(TCInfo_CSV):
+# load tab delimited file containing list and color information
+TCInfoPath = "/Users/rgroussman/Dropbox/Armbrust/bioinfo/scripts/treecolor/MarineRef2_plus_internal/treecolors.csv"
+
+def parse_treecolor_info(TCInfo):
 
 	TreecolorDict = {} # treecolor information dictionary
 
@@ -130,7 +132,18 @@ def normalize_counts(sample, raw_sum_count):
 		print "Sample ID not found!"
 	return norm_count
 
-def initialize_taxa_counts_dict():
+def initialize_taxa_counts_dict(TCInfo):
+	"""Build a blank dictionary like default_taxa_counts_dict
+	but using specified into in alternate treecolor.csv-like file."""
+
+	TaxaCountsDict = {}
+	for line in open(TCInfoPath, 'r'):
+		base_file = line.split(",")[0]
+		group_name = base_file.split(".")[0]
+		TaxaCountsDict[group_name] = 0
+	return TaxaCountsDict
+
+def default_taxa_counts_dict():
 	"""Initialize TaxaCountsDict starting with 0 for desired taxons.
 	"""
 
@@ -167,10 +180,11 @@ def print_high_level_results():
 	counts_results.append(str(norm_count_other))
 	counts_results.append(str(norm_count_outgroup))
 	# line below prints the header
-	# print 'sample_name' + "," + ",".join(sorted(TaxaCountsDict.keys())) + ",Other,Outgroups"
+	if args.print_header == True:
+		print 'sample_name' + "," + ",".join(sorted(TaxaCountsDict.keys())) + ",Other,Outgroups"
+	elif args.print_header == False:
+		print ",".join(counts_results)
 
-	# here's our results...
-	print ",".join(counts_results)
 
 def print_top_taxa_per_group(group):
 	"""Given a group, will run through all of the tax_id that run under its
@@ -178,7 +192,7 @@ def print_top_taxa_per_group(group):
 	the proportion of hits in the file (a quick way to normalize)"""
 
 	# header
-	top_taxa_header = "sample_name,group,tax_id,fraction_of_all_hits"
+	# top_taxa_header = "sample_name,group,tax_id,fraction_of_all_hits"
 
 	# for our taxa in TreecolorDict
 	for taxa in TreecolorDict[group]:
@@ -219,13 +233,13 @@ def search_and_count_treecolor_dict(tax_id):
 	global other_counter
 	global outgroup_counter
 
-	taxid_found = False
+	# taxid_found = False
 	for group_name in TreecolorDict:
 		if tax_id in TreecolorDict[group_name]:
 			TaxaCountsDict[group_name] += 1
-			taxid_found = True
-	if taxid_found == False:
-		other_counter += 1
+			# taxid_found = True
+		elif tax_id not in TreecolorDict[group_name]:
+			other_counter += 1
 
 def fix_sample_name(sample_name):
 	"""Fixes some sample names to standardize format.
@@ -240,6 +254,10 @@ def fix_sample_name(sample_name):
 	return sample_name
 
 
+if args.treecolor_csv != None:
+	TCInfoPath = args.treecolor_csv
+TCInfo = open(TCInfoPath, 'r')
+
 # if ingroup list file is provided, load the file:
 if args.ingroup_edges != None:
 	ingroup_edges_set = process_ingroup_list(args.ingroup_edges)
@@ -248,7 +266,10 @@ if args.ingroup_edges != None:
 TreecolorDict = parse_treecolor_info(TCInfo)
 
 # Initialize TaxaCountsDict and Other count and Outgroup count
-TaxaCountsDict = initialize_taxa_counts_dict()
+if args.treecolor_csv != None:
+	TaxaCountsDict = initialize_taxa_counts_dict(TCInfo)
+elif args.treecolor_csv == None:
+	TaxaCountsDict = default_taxa_counts_dict()
 
 # Initialize NormFactorsDict
 NormFactorsDict = initialize_norm_counts_dict()
@@ -293,3 +314,5 @@ elif args.top_taxa == True:
 		# also 'other' and 'outgroup'
 	print fix_sample_name(sample_name) + "," + "Other" + "," + "1" + "," + str(other_counter / float(line_counter))
 	print fix_sample_name(sample_name) + "," + "Outgroups" + "," + "1" + "," + str(outgroup_counter / float(line_counter))
+
+in_csv.close()
