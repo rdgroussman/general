@@ -16,7 +16,18 @@ parser.add_argument("-o", "--out_file", help="Specify the name of the outfile (c
 parser.add_argument("-c", "--cutoff", help="Specify the pendant length cutoff", type=float)
 args = parser.parse_args()
 
-out_csv = open(args.out_file,'w')
+def build_output_handle(infile_path):
+	handle_elts = infile_path.split(".")
+	handle_elts.insert(-1,"plf")
+	outfile_path = ".".join(handle_elts)
+	return outfile_path
+
+if args.out_file == None:
+	out_path = build_output_handle(args.input)
+elif args.out_file != None:
+	out_path = args.out_file
+
+out_csv = open(out_path,'w')
 cutoff = args.cutoff
 line_counter = 0
 discarded_counter = 0
@@ -36,5 +47,5 @@ for line in taxa_csv:
 
 print "Filtering", args.input, "by pendant length", args.cutoff
 print "Removed", discarded_counter, "out of", (line_counter -1), "reads"
-print "Saved filtered output to", args.out_file
+print "Saved filtered output to", out_path
 out_csv.close()
