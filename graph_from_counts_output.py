@@ -13,13 +13,19 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("input_csv", help="CSV-formatted input file from count_pplacer_csv_by_taxonomy.py")
 parser.add_argument("-d", "--diel_expression", help="Generate plot of diel expression over 24h window", action="store_true")
-parser.add_argument("-s", "--time_series", help="Generate a time series over 24h window", action="store_true")
+parser.add_argument("-s", "--time_series", help="Generate a time series over the 96h window", action="store_true")
 parser.add_argument("-p", "--print_table", help="Print a CSV table of values used to construct graphs", action="store_true")
 parser.add_argument("-t", "--taxa_shown", help="Comma-separated string of high-level taxa to include in plot", type=str)
 parser.add_argument("-n", "--not_shown", help="Comma-separated string of high-level taxa to NOT include in plot", type=str)
 
 args = parser.parse_args()
 input_csv_path = args.input_csv
+
+def get_gene_name(input_csv):
+
+	gene_name = input_csv.split('/')[-1]
+	gene_name = gene_name.split('.')[0]
+	return gene_name
 
 def parse_input_csv():
 	input_csv_file = open(input_csv_path, 'r')
@@ -94,11 +100,12 @@ def plot_diel_expression():
 	ax.set_xlabel('Hour', fontsize = 16)
 	ax.set_xticks([int(hour) for hour in diel_hour_order])
 	ax.set_ylabel('Estimated Transcripts L-1', fontsize = 16)
-	plt.title("DGAT1 Expression over a 24h cycle")
+	plot_title = gene_name + " expression over a 24h cycle"
+	plt.title(plot_title)
 
 	# We'll use these numbers to cutoff low-abundance groups from the display.
 	top_group_avg = 0
-	plot_cutoff = 0.001 # Must be this pct of top_group_avg to plot this group
+	plot_cutoff = 0.05 # Must be this pct of top_group_avg to plot this group
 
 	# First we can collect all the axis data:
 	for group in GroupsSet:
@@ -143,66 +150,102 @@ def make_time_series_dict():
 	"""Links diel1 sample ID to sampling hour"""
 
 	time_series_dict = {
-	'S06C1_A_600': 0,
-	'S06C1_C_600': 0,
-	'S07C1_A_1000': 4,
-	'S07C1_B_1000': 4,
-	'S08C1_B_1400': 8,
-	'S08C1_C_1400': 8,
-	'S11C1_A_1800': 12,
-	'S11C1_C_1800': 12,
-	'S14C1_B_2200': 16,
-	'S14C1_C_2200': 16,
-	'S15C1_B_200': 20,
-	'S15C1_C_200': 20,
-	'S16C1_A_600': 24,
-	'S16C1_B_600': 24,
-	'S17C1_A_1000': 28,
-	'S17C1_B_1000': 28,
-	'S18C1_A_1400': 32,
-	'S18C1_C_1400': 32,
-	'S19C1_A_1800': 36,
-	'S19C1_C_1800': 36,
-	'S20C1_B_2200': 40,
-	'S20C1_C_2200': 40,
-	'S21C1_B_200': 44,
-	'S21C1_C_200': 44,
-	'S22C1_A_600': 48,
-	'S22C1_C_600': 48,
-	'S23C1_B_1000': 52,
-	'S23C1_C_1000': 52,
-	'S24C1_A_1400': 56,
-	'S24C1_B_1400': 56,
-	'S26C1_A_1800': 60,
-	'S26C1_C_1800': 60,
-	'S28C1_B_2200': 64,
-	'S28C1_C_2200': 64,
-	'S29C1_A_200': 68,
-	'S29C1_C_200': 68,
-	'S30C1_A_600': 72,
-	'S30C1_C_600': 72,
-	'S31C1_A_1000': 76,
-	'S31C1_C_1000': 76,
-	'S32C1_B_1400': 80,
-	'S32C1_C_1400': 80,
-	'S33C1_A_1800': 84,
-	'S33C1_C_1800': 84,
-	'S34C1_B_2200': 88,
-	'S34C1_C_2200': 88,
-	'S35C1_A_200': 92,
-	'S35C1_C_200': 92 }
+	'S06C1_A_600': "0",
+	'S06C1_C_600': "0",
+	'S07C1_A_1000': "4",
+	'S07C1_B_1000': "4",
+	'S08C1_B_1400': "8",
+	'S08C1_C_1400': "8",
+	'S11C1_A_1800': "12",
+	'S11C1_C_1800': "12",
+	'S14C1_B_2200': "16",
+	'S14C1_C_2200': "16",
+	'S15C1_B_200': "20",
+	'S15C1_C_200': "20",
+	'S16C1_A_600': "24",
+	'S16C1_B_600': "24",
+	'S17C1_A_1000': "28",
+	'S17C1_B_1000': "28",
+	'S18C1_A_1400': "32",
+	'S18C1_C_1400': "32",
+	'S19C1_A_1800': "36",
+	'S19C1_C_1800': "36",
+	'S20C1_B_2200': "40",
+	'S20C1_C_2200': "40",
+	'S21C1_B_200': "44",
+	'S21C1_C_200': "44",
+	'S22C1_A_600': "48",
+	'S22C1_C_600': "48",
+	'S23C1_B_1000': "52",
+	'S23C1_C_1000': "52",
+	'S24C1_A_1400': "56",
+	'S24C1_B_1400': "56",
+	'S26C1_A_1800': "60",
+	'S26C1_C_1800': "60",
+	'S28C1_B_2200': "64",
+	'S28C1_C_2200': "64",
+	'S29C1_A_200': "68",
+	'S29C1_C_200': "68",
+	'S30C1_A_600': "72",
+	'S30C1_C_600': "72",
+	'S31C1_A_1000': "76",
+	'S31C1_C_1000': "76",
+	'S32C1_B_1400': "80",
+	'S32C1_C_1400': "80",
+	'S33C1_A_1800': "84",
+	'S33C1_C_1800': "84",
+	'S34C1_B_2200': "88",
+	'S34C1_C_2200': "88",
+	'S35C1_A_200': "92",
+	'S35C1_C_200': "92" }
 
 	return time_series_dict
 
 def plot_expression_over_time_series():
 	"""Plot the expression over the full time series for each specified
 	taxonomic group. Show error ranges between duplicates."""
-	pass
+
+	# Make the dictionary linking the sample ID to the relative hour:
+	# looks like this:
+	# 	'S08C1_C_1400': "8",
+	# 	'S11C1_A_1800': "12",
+	time_series_dict = make_time_series_dict()
+
+	diel_hour_order = ["0", "4", "8", "12", "16", "20", "24", "28", "32", "36", "40", "44", "48", "52", "56", "60", "64", "68", "72", "76", "80", "84", "88", "92"]
+	# A list of the values (taxon groups) in CountsResultsDict
+	GroupsSet = set([])
+
+	# Create a dictionary to hold the high and low values for each group per time point
+	ExpHourDict = {}
+	for hour in diel_hour_order:
+		ExpHourDict[hour] = {}
+
+	# Go through the CountsResultsDict and collect the counts for each group per time
+	for sample in CountsResultsDict:
+		sample_time = time_series_dict[sample]
+		# If the subsequent keys are NOT 'time', 'sample_name', then continue:
+		for key in CountsResultsDict[sample]:
+			if key != 'time' and key != 'sample_name':
+				GroupsSet.add(key)
+				if key not in ExpHourDict[sample_time]:
+					ExpHourDict[sample_time][key] = [int(CountsResultsDict[sample][key])]
+				elif key in DielExpDict[sample_time]:
+					ExpHourDict[sample_time][key].append(int(CountsResultsDict[sample][key]))
 
 
+
+
+
+
+
+gene_name = get_gene_name(args.input_csv)
 
 time_series_dict = make_time_series_dict()
 
 CountsResultsDict = parse_input_csv()
 
-plot_diel_expression()
+if args.diel_expression == True:
+	plot_diel_expression()
+
+if args.time_series == True:
+	plot_expression_over_time_series()

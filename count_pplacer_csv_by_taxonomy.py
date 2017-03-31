@@ -24,11 +24,13 @@ parser.add_argument("-t", "--top_taxa", help="Print top taxa per group", action=
 parser.add_argument("-i", "--ingroup_edges", help="Only count edge numbers in this file", type=str)
 parser.add_argument("-c", "--treecolor_csv", help="Specify path to an alternate treecolor.csv-like file.", type=str)
 parser.add_argument("-e", "--print_header", help="Print header for csv and quit", action="store_true")
+parser.add_argument("-w", "--write_unknown", help="Write out all the tax_ids in the 'unknown' group and quit", action="store_true")
 
 
 args = parser.parse_args()
 other_counter = 0
 outgroup_counter = 0
+other_tax_set = set([])
 
 # load tab delimited file containing list and color information
 TCInfoPath = "/Users/rgroussman/Dropbox/Armbrust/bioinfo/scripts/treecolor/MarineRef2_plus_internal/treecolors.csv"
@@ -43,11 +45,13 @@ def parse_treecolor_info(TCInfo):
 		ListFilePath = r'/Users/rgroussman/Dropbox/Armbrust/bioinfo/scripts/treecolor/MarineRef2_plus_internal/' + ListFile.strip()
 		group_name = ListFile.split(".")[0]	# pop off the prefix, this is the clade name
 		tax_file = open(ListFilePath, 'r') # open the list file
+		tax_set = set([])
 		tax_list = []
 		for tax_id in tax_file:
 			tax_id = tax_id.strip()
-			tax_list.append(tax_id)
-		TreecolorDict[group_name] = tax_list
+			# tax_list.append(tax_id)
+			tax_set.add(tax_id)
+		TreecolorDict[group_name] = tax_set
 
 	return TreecolorDict
 
@@ -182,9 +186,26 @@ def print_high_level_results():
 	# line below prints the header
 	if args.print_header == True:
 		print 'sample_name' + "," + ",".join(sorted(TaxaCountsDict.keys())) + ",Other,Outgroups"
+	elif args.write_unknown == True:
+		for other in other_tax_set:
+			print other + "\n"
 	elif args.print_header == False:
 		print ",".join(counts_results)
 
+def test_treecolor_dict(TreecolorDict):
+	"""
+	Tests whether or not there are overlapping tax_id between the different
+	groups. Prints a warning to stdout if yes; no message if not."""
+
+	# Test that there are no overlapping tax_ids between the different groups in TreecolorDict:
+	tax_group_list = TreecolorDict.keys()
+	while len(tax_group_list) > 0:
+		any_group = tax_group_list.pop()
+		for other_group in tax_group_list:
+			overlap = TreecolorDict[any_group].intersection(TreecolorDict[other_group])
+			if len(overlap) > 0:
+				print "Overlap between ", any_group, "and", other_group
+				print overlap
 
 def print_top_taxa_per_group(group):
 	"""Given a group, will run through all of the tax_id that run under its
@@ -197,7 +218,7 @@ def print_top_taxa_per_group(group):
 	# for our taxa in TreecolorDict
 	for taxa in TreecolorDict[group]:
 		if taxa in EdgeCountDict.keys():
-			hit_fraction = EdgeCountDict[taxa] / float(line_counter)
+			hit_fraction = EdgeCountDict[taxa] / count_denominator
 			print fix_sample_name(sample_name) + "," + group + "," + str(taxa) + "," + str(hit_fraction)
 
 def add_classification_to_edgedict(classification):
@@ -206,7 +227,7 @@ def add_classification_to_edgedict(classification):
 
 	if classification in EdgeCountDict.keys():
 		EdgeCountDict[classification] += 1
-	elif classification not in EdgeCountDict:
+	elif classification not in EdgeCountDict.keys():
 		EdgeCountDict[classification] = 1
 
 def process_ingroup_list(ingroup_file_path):
@@ -231,15 +252,18 @@ def search_and_count_treecolor_dict(tax_id):
 	if it matches a list, increment tally in TaxaCountsDict
 	"""
 	global other_counter
+	global other_tax_set
 	global outgroup_counter
 
-	# taxid_found = False
+	taxid_found = False
 	for group_name in TreecolorDict:
 		if tax_id in TreecolorDict[group_name]:
 			TaxaCountsDict[group_name] += 1
-			# taxid_found = True
-		elif tax_id not in TreecolorDict[group_name]:
-			other_counter += 1
+			taxid_found = True
+	if taxid_found == False:
+		other_counter += 1
+		if args.write_unknown == True:
+			other_tax_set.add(tax_id)
 
 def fix_sample_name(sample_name):
 	"""Fixes some sample names to standardize format.
@@ -265,6 +289,9 @@ if args.ingroup_edges != None:
 # parse treecolor info
 TreecolorDict = parse_treecolor_info(TCInfo)
 
+# test the dictionary for any overlapping sets of tax_ids:
+test_treecolor_dict(TreecolorDict)
+
 # Initialize TaxaCountsDict and Other count and Outgroup count
 if args.treecolor_csv != None:
 	TaxaCountsDict = initialize_taxa_counts_dict(TCInfo)
@@ -289,7 +316,6 @@ for line in in_csv:
 	line_elts = line.split(",")
 	classification = line_elts[10]
 	edge_num = line_elts[3]
-	add_classification_to_edgedict(classification)
 	# pull out the origin name (from element [0][1])
 	origin = line_elts[0]
 	sample_name = origin.split(".")[1]
@@ -301,18 +327,25 @@ for line in in_csv:
 	if args.ingroup_edges != None:
 		if edge_num in ingroup_edges_set:
 			search_and_count_treecolor_dict(classification)
+			add_classification_to_edgedict(classification)
 		elif edge_num not in ingroup_edges_set:
 			outgroup_counter += 1
 	elif args.ingroup_edges == None:
+		add_classification_to_edgedict(classification)
 		search_and_count_treecolor_dict(classification)
 
 if args.high_level_groups == True:
 	print_high_level_results()
 elif args.top_taxa == True:
+	if args.ingroup_edges == None:
+		count_denominator = float(line_counter)
+	elif args.ingroup_edges != None:
+		count_denominator = float(line_counter - outgroup_counter)
 	for group in TreecolorDict.keys():
 		print_top_taxa_per_group(group)
 		# also 'other' and 'outgroup'
-	print fix_sample_name(sample_name) + "," + "Other" + "," + "1" + "," + str(other_counter / float(line_counter))
-	print fix_sample_name(sample_name) + "," + "Outgroups" + "," + "1" + "," + str(outgroup_counter / float(line_counter))
+	print fix_sample_name(sample_name) + "," + "Other" + "," + "1" + "," + str(other_counter / count_denominator)
+	# if args.ingroup_edges != None:
+	# 	print fix_sample_name(sample_name) + "," + "Outgroups" + "," + "1" + "," + str(outgroup_counter / count_denominator)
 
 in_csv.close()

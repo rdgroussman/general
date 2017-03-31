@@ -1,11 +1,23 @@
 #!/usr/bin/env python
 
-
 # taxify_taxa_fracts.py
 
-TAXA_CSV_PATH="/Users/rgroussman/data/SCOPE/diel1/single_gene/DGAT1/taxa.csv"
-TAXA_FRACTS_PATH="/Users/rgroussman/data/SCOPE/diel1/single_gene/DGAT1/summed_csv/taxa_fracts.csv"
-OUT_CSV_PATH="/Users/rgroussman/data/SCOPE/diel1/single_gene/DGAT1/summed_csv/taxified_taxa_fracts.csv"
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-t", "--taxa_csv", help="Input taxa.csv", type=str)
+parser.add_argument("-i", "--input", help="Input taxa_fracts.csv", type=str)
+parser.add_argument("-o", "--out_file", help="Specify the name of the outfile", type=str)
+args = parser.parse_args()
+
+TAXA_CSV_PATH = args.taxa_csv
+TAXA_FRACTS_PATH = args.input
+OUT_CSV_PATH = args.out_file
+
+# old hard-coded values
+# TAXA_CSV_PATH="/Users/rgroussman/data/SCOPE/diel1/single_gene/DGAT1/taxa.csv"
+# TAXA_FRACTS_PATH="/Users/rgroussman/data/SCOPE/diel1/single_gene/DGAT1/summed_csv/taxa_fracts.csv"
+# OUT_CSV_PATH="/Users/rgroussman/data/SCOPE/diel1/single_gene/DGAT1/summed_csv/taxified_taxa_fracts.csv"
 
 # get tax_id, rank, and tax_name from taxa.csv
 # put latter two in dictionary under key tax_id

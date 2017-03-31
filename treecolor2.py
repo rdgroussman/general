@@ -5,12 +5,6 @@ import xml.etree.ElementTree as ET
 from Bio import Phylo
 import argparse
 
-# load tab delimited file containing list and color information
-TCInfoPath = "/Users/rgroussman/Dropbox/Armbrust/bioinfo/scripts/treecolor/MarineRef2_plus_internal/"
-
-# Default colors for internal nodes:
-default_rgb = ('150','150','150')
-
 def build_output_handle(infile_path):
 	handle_elts = infile_path.split(".")
 	handle_elts.insert(-1,"col")
@@ -23,7 +17,11 @@ def build_color_dict(TCInfoPath):
 
 	"""
 
-	TCInfo = open((TCInfoPath + "/treecolors.csv"), 'r')
+	treecolor_file = "treecolors.csv"
+	if args.treecolor_csv != None:
+		treecolor_file = args.treecolor_csv
+
+	TCInfo = open((TCInfoPath + treecolor_file), 'r')
 
 	TreecolorDict = {} # treecolor information dictionary
 	for line in TCInfo:
@@ -53,8 +51,6 @@ def test_treecolor_dict(TreecolorDict):
 	tax_group_list = TreecolorDict.keys()
 	while len(tax_group_list) > 0:
 		any_group = tax_group_list.pop()
-		# print any_group
-		# print TreecolorDict[any_group][1]
 		for other_group in tax_group_list:
 			overlap = TreecolorDict[any_group][1].intersection(TreecolorDict[other_group][1])
 			if len(overlap) > 0:
@@ -109,15 +105,21 @@ def change_taxa_colors(parent, rgb_values):
 		color.find('{http://www.phyloxml.org}green').text = rgb_values[1]
 		color.find('{http://www.phyloxml.org}blue').text = rgb_values[2]
 
-
 parser = argparse.ArgumentParser()
 parser.add_argument("input_xml", help="XML-formatted phylogenetic tree")
 parser.add_argument("-a", "--all_leaves", help="Color all leaves", action="store_true")
 parser.add_argument("-f", "--fat_tree", help="Color leaves with any given width", action="store_true")
 parser.add_argument("-m", "--min_width", help="Used with --fat_tree; specify the minimum width to color the leaf", type=float)
+parser.add_argument("-c", "--treecolor_csv", help="Specify path to an alternate treecolor.csv-like file.", type=str)
 parser.add_argument("-o", "--out_file", help="Specify the name of the outfile", type=str)
 
 args = parser.parse_args()
+
+# Default colors for internal nodes:
+default_rgb = ('150','150','150')
+
+# load tab delimited file containing list and color information
+TCInfoPath = "/Users/rgroussman/Dropbox/Armbrust/bioinfo/scripts/treecolor/MarineRef2_plus_internal/"
 
 input_xml_path = args.input_xml
 TreecolorDict = build_color_dict(TCInfoPath)

@@ -1,0 +1,13 @@
+Alveolata	MMETSP9990
+CentricDiatom	MMETSP9999
+Cryptophyta	MMETSP9992
+Haptophyta	MMETSP9993
+ND-Stramenopile	MMETSP9994
+Opisthokonta	MMETSP9995
+PennateDiatom	MMETSP9998
+Rhodophyte	MMETSP9996
+Viridiplantae	MMETSP9997
+Coscinodiscophyceae	MMETSP9989
+Mediophyceae	MMETSP9988
+Fragilariophyceae	MMETSP9987
+Bacillariophyceae	MMETSP9986
