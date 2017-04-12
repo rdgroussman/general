@@ -28,7 +28,7 @@ out_csv = open(OUT_CSV_PATH,'w')
 
 
 with open(TAXA_CSV_PATH, 'r') as taxa_csv:
-	next(taxa_csv)
+	header = next(taxa_csv)
 	for line in taxa_csv:
 		line_elts = line.split(",")
 		tax_id = line_elts[0].strip('""')

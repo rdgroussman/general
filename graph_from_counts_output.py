@@ -107,6 +107,7 @@ def plot_diel_expression():
 	top_group_avg = 0
 	plot_cutoff = 0.05 # Must be this pct of top_group_avg to plot this group
 
+
 	# First we can collect all the axis data:
 	for group in GroupsSet:
 		y_vals = [DielExpDict[hour][group] for hour in diel_hour_order] # gives a list of lists
@@ -124,7 +125,8 @@ def plot_diel_expression():
 
 	# only plot if the expression level crosses a threshold:
 	for group in GroupsSet:
-		if PlotDict[group]['group_avg'] >= top_group_avg * plot_cutoff:
+		# if PlotDict[group]['group_avg'] >= top_group_avg * plot_cutoff: # if we want to use the plot_cutoff
+		if PlotDict[group]['group_avg'] > 0: # if we want to show non-zero groups
 			legend.append(group)
 			ax.errorbar(x, PlotDict[group]['y_mean'], yerr = PlotDict[group]['y_err'])
 			# error bars:
