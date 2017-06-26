@@ -32,9 +32,9 @@ args = parser.parse_args()
 kept_fields = ["phylum","class"]
 
 def parse_m8_line(m8_line):
-	"""parses one line from a rapsearch m8 file; returns query, subject id, bitscore and e-value as a list"""
+	"""parses one line from a rapsearch m8 file; returns query, subject id, e-value and bit-score as a list"""
 	m8_elts = m8_line.split('\t')
-	return [m8_elts[0], m8_elts[1].replace(',',''), m8_elts[9], m8_elts[10]]
+	return [m8_elts[0], m8_elts[1].replace(',',''), m8_elts[10], m8_elts[11]]
 
 def get_taxid_from_subject(subject_id):
 	tax_pattern = re.compile("(tax[0-9]+)")
@@ -80,8 +80,8 @@ with open(args.m8, 'r') as m8:
 			m8_elts = parse_m8_line(line)
 			query_id = m8_elts[0]
 			subject_id = m8_elts[1]
-			bitscore = m8_elts[2]
-			evalue = m8_elts[3]
+			evalue = m8_elts[2]
+			bitscore = m8_elts[3]
 			tax_id = get_taxid_from_subject(subject_id)
 			if query_id not in m8_dict.keys():
 				m8_dict[query_id] = {}

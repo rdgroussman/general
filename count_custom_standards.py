@@ -24,8 +24,8 @@ args = parser.parse_args()
 
 # load the input fasta and output fasta
 input_sam = open(args.input_sam, 'r')
-outfile_path = args.input_sam + ".std_counts"
-outfile = open(outfile_path, 'w')
+# outfile_path = args.input_sam + ".std_counts"
+# outfile = open(outfile_path, 'w')
 
 # dictionary for collecting counts of standards - premade!
 StandardCountsDict = {
@@ -87,5 +87,5 @@ print outlist
 #     outline = standard + "," + str(StandardCountsDict[standard]) + "\n"
 #     outfile.write(outline)
 
-outfile.close()
+# outfile.close()
 input_sam.close()

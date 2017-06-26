@@ -13,6 +13,7 @@ LLTWRGSRRRSNLSERQSRN
 
 Will output each ORF as its own sequence. Length-cutoff criteria
 and Met-start arguments can be provided.
+
 """
 
 import argparse
@@ -21,64 +22,65 @@ from Bio.SeqRecord import SeqRecord
 
 
 def build_output_handle(infile_path, min_pep_length):
-    handle_elts = infile_path.split(".")
-    handle_mod = "orfs" + str(args.min_pep_length)
-    handle_elts.insert(-1,handle_mod)
-    outfile_path = ".".join(handle_elts)
-    return outfile_path
+	handle_elts = infile_path.split(".")
+	handle_mod = "orfs" + str(args.min_pep_length)
+	handle_elts.insert(-1,handle_mod)
+	outfile_path = ".".join(handle_elts)
+	return outfile_path
 
 def get_machine_run(infile_path):
-    """Given a FASTA path with the machine run included in format:
-        ex: S11C1_A_1800.H5C5H_combined.6tr.fasta
-    Returns a string with the machine run:
-        ex: H5C5H
-    """
+	"""Given a FASTA path with the machine run included in format:
+		ex: S11C1_A_1800.H5C5H_combined.6tr.fasta
+	Returns a string with the machine run:
+		ex: H5C5H
+	"""
 
-    string_elts = infile_path.split(".")
-    return string_elts[1][:5]
+	# Cutting this suffix off of the path: "_combined.6tr.fasta"
+	suffix = "_combined.6tr.fasta"
+	return infile_path.replace(suffix,'')
 
 def process_seq(seq_record):
-    """
-    Takes a fasta-format translation as output by transeq Ex:
-        >3_5
-        SRQYLQIGFDCRMATTSLPSL*EGDQIHRLHP*EGCISHTR
-        SYVHTMLPKNHYQRTNLPECIHGWHSLHHSR**LE*YPX
+	"""
+	Takes a fasta-format translation as output by transeq Ex:
+		>3_5
+		SRQYLQIGFDCRMATTSLPSL*EGDQIHRLHP*EGCISHTR
+		SYVHTMLPKNHYQRTNLPECIHGWHSLHHSR**LE*YPX
 
-        QLCGLLTPGDILIAVNGKSLINGTIHNPVSMERMFSVLKPLSQPLDAEDGQYYAREVRLRLVLDEGRELLRDQKEREERK
+		QLCGLLTPGDILIAVNGKSLINGTIHNPVSMERMFSVLKPLSQPLDAEDGQYYAREVRLRLVLDEGRELLRDQKEREERK
 
-    Returns individual peptides, accepting arguments for min_pep_length
-    and Met start (following stops). Also modifies defline.
-    """
+	Returns individual peptides, accepting arguments for min_pep_length
+	and Met start (following stops). Also modifies defline.
+	"""
 
-    in_frame = seq_record.seq
-    orfs = in_frame.split("*")
+	in_frame = seq_record.seq
+	orfs = in_frame.split("*")
 
-    good_orfs_count = 0
-    starts_with_met = 0
+	good_orfs_count = 0
+	starts_with_met = 0
 
-    # if the whole reading frame is uninterrupted, write out
-    if len(orfs) == 1:
-        good_orfs_count = 1
-        write_out_pep(orfs[0], seq_record.id, 1)
+	# if the whole reading frame is uninterrupted, write out
+	if len(orfs) == 1:
+		good_orfs_count = 1
+		write_out_pep(orfs[0], seq_record.id, 1)
 
-    # otherwise, check for length
-    elif len(orfs) > 1:
-        for orf in orfs:
-            if len(orf) >= args.min_pep_length:
-                good_orfs_count += 1
-                write_out_pep(orf, seq_record.id, good_orfs_count)
+	# otherwise, check for length
+	elif len(orfs) > 1:
+		for orf in orfs:
+			if len(orf) >= args.min_pep_length:
+				good_orfs_count += 1
+				write_out_pep(orf, seq_record.id, good_orfs_count)
 
 def write_out_pep(orf, id, counter):
 
-    """Modifies the defline to include the integer number for output ORFs from each reading frame
-    as well as the machine run that it came from."""
+	"""Modifies the defline to include the integer number for output ORFs from each reading frame
+	as well as the machine run that it came from."""
 
-    run_id = ""
-    if args.machine_run == True:
-        run_id = get_machine_run(args.fasta_file) + "_"
-    defline = ">" + run_id + id + "_" + str(counter) + "\n"
-    output_file.write(defline)
-    output_file.write(str(orf) + "\n")
+	run_id = ""
+	if args.machine_run == True:
+		run_id = get_machine_run(args.fasta_file) + "_"
+	defline = ">" + run_id + id + "_" + str(counter) + "\n"
+	output_file.write(defline)
+	output_file.write(str(orf) + "\n")
 
 # parse incoming argument
 parser = argparse.ArgumentParser()
@@ -94,7 +96,7 @@ output_file = open(output_fasta_handle, 'w')
 
 # for each sequence in the fasta file;
 for seq_record in SeqIO.parse(fasta_file, "fasta"):
-    process_seq(seq_record)
+	process_seq(seq_record)
 
 fasta_file.close()
 output_file.close()
