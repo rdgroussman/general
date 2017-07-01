@@ -15,14 +15,14 @@ fasta = open(FASTAfile, 'r')
 OutFileName = SeqListFile + ".fasta"
 OutFile = open(OutFileName,'w')
 
-getlist=[]	# declare list
+getset=set([])	# declare list
 for line in seqlist:
 	line = line.strip()
-	getlist.append(line)	# append line to list
-print getlist
+	getset.add(line)	# append line to list
+print getset
 
 for record in SeqIO.parse(fasta, 'fasta'):
-	if record.id in getlist:
+	if record.id in getset:
 		SeqIO.write(record, OutFile, "fasta")
 
 OutFile.close()

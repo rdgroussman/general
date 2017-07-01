@@ -368,7 +368,7 @@ in_csv.readline()   # skip the first line
 for line in in_csv:
 	line_counter += 1
 	line_elts = line.split(",")
-	classification = line_elts[10]
+	classification = line_elts[10].strip()
 	edge_num = line_elts[3]
 	# pull out the origin name (from element [0][1])
 	origin = line_elts[0]
