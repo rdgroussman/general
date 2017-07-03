@@ -56,22 +56,25 @@ def parse_taxacsv_header(header):
 	return column_data
 
 TaxDict = {}
-with open(args.taxa_csv, 'r') as taxa_csv:
-	header = next(taxa_csv)
-	column_data = parse_taxacsv_header(header)
-	for line in taxa_csv:
-		line_elts = line.split(",")
-		tax_id = line_elts[0].strip('""')
-		rank = line_elts[2].strip('""')
-		tax_name = line_elts[3].strip('""')
-		TaxDict[tax_id] = {}
-		TaxDict[tax_id]["tax_name"] = tax_name
-		TaxDict[tax_id]["tax_id"] = tax_id
-		TaxDict[tax_id]["rank"] = rank
-		for i in range(len(column_data)):
-			TaxDict[tax_id][column_data[i][1].strip('""')] = line_elts[int(column_data[i][0])].strip('""')
+print "Opening taxa_csv..."
+taxa_csv = open(args.taxa_csv, 'r')
+header = next(taxa_csv)
+column_data = parse_taxacsv_header(header)
+for line in taxa_csv:
+	line_elts = line.split(",")
+	tax_id = line_elts[0].strip('""')
+	rank = line_elts[2].strip('""')
+	tax_name = line_elts[3].strip('""')
+	TaxDict[tax_id] = {}
+	TaxDict[tax_id]["tax_name"] = tax_name
+	TaxDict[tax_id]["tax_id"] = tax_id
+	TaxDict[tax_id]["rank"] = rank
+	for i in range(len(column_data)):
+		TaxDict[tax_id][column_data[i][1].strip('""')] = line_elts[int(column_data[i][0])].strip('""')
+taxa_csv.close()
 
 m8_dict = {}
+print "Processing m8 file..."
 with open(args.m8, 'r') as m8:
 	for line in m8:
 		if line.startswith('#'):
@@ -97,6 +100,7 @@ with open(args.m8, 'r') as m8:
 					m8_dict[query_id]["bitscore"] = float(bitscore)
 
 # print it out:
+print "Writing out results..."
 out_file = open(args.out_file, 'w')
 header = "query_id,subject_id,tax_id,bitscore,e-value\n"
 out_file.write(header)
