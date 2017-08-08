@@ -17,6 +17,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("input_xml", help="XML-formatted input tree")
 parser.add_argument("-b", "--log_base", help="Log base", type=int, default=2)
 parser.add_argument("-l", "--linear_correct", help="Linear correction factor", type=float, default=2.0)
+parser.add_argument("-o", "--out_file", help="Output file name", type=str)
+
 
 args = parser.parse_args()
 
@@ -30,10 +32,10 @@ def build_output_handle(infile_path):
 	out_xml_path = ".".join(handle_elts)
 	return out_xml_path
 
-# if args.out_file != None:
-# 	out_xml_path = args.out_file
-# else:
-out_xml_path = build_output_handle(input_xml_path)
+if args.out_file != None:
+	out_xml_path = args.out_file
+else:
+	out_xml_path = build_output_handle(input_xml_path)
 
 
 in_xml = ET.parse(input_xml_path)
