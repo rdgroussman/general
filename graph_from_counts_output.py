@@ -123,21 +123,51 @@ def plot_diel_expression():
 		PlotDict[group]['y_err'] = y_err
 		PlotDict[group]['group_avg'] = group_avg
 
+	#### NEW EXPERIMENTAL ####
+	NUM_COLORS = len(GroupsSet)
+	LINE_STYLES = ['solid', 'dashed', 'dashdot', 'dotted']
+	NUM_STYLES = len(LINE_STYLES)
+	cm = plt.get_cmap('gist_rainbow')
+	# fig = plt.figure()
+	# ax = fig.add_subplot(111)
+	# for i in range(NUM_COLORS):
+	#     lines = ax.plot(np.arange(10)*(i+1))
+	#     lines[0].set_color(cm(i//NUM_STYLES*float(NUM_STYLES)/NUM_COLORS))
+	#     lines[0].set_linestyle(LINE_STYLES[i%NUM_STYLES])
+
+	# fig.savefig('moreColors.png')
+	# plt.show()
+	#### ####
+
+
 	# only plot if the expression level crosses a threshold:
+	style_counter = 0
 	for group in GroupsSet:
 		# if PlotDict[group]['group_avg'] >= top_group_avg * plot_cutoff: # if we want to use the plot_cutoff
 		if PlotDict[group]['group_avg'] > 0: # if we want to show non-zero groups
 			legend.append(group)
-			ax.errorbar(x, PlotDict[group]['y_mean'], yerr = PlotDict[group]['y_err'])
+			# ax.errorbar(x, PlotDict[group]['y_mean'], yerr = PlotDict[group]['y_err'])
+			lines = ax.errorbar(x, PlotDict[group]['y_mean'], yerr = PlotDict[group]['y_err']) # EXPERIMENTAL
+			lines[0].set_color(cm(style_counter//NUM_STYLES*float(NUM_STYLES)/NUM_COLORS)) # EXPERIMENTAL
+			lines[0].set_linestyle(LINE_STYLES[style_counter%NUM_STYLES]) # EXPERIMENTAL
+			style_counter +=1  # EXPERIMENTAL
 			# error bars:
 			# http://stackoverflow.com/questions/26378005/matplotlib-getting-different-colors-in-data-lines-with-error-bars
 
-	plt.legend(legend, loc='best')
+
+
+	# plt.legend(legend, loc='best')
 	# plt.show()
 	plt.tight_layout()
 	# to make the figure handle, split to remove filename crap, then split off the old extension.
 	outfig_handle = input_csv_path.split('/')[-1].split('.')[0] + ".png"
 	plt.savefig(outfig_handle)
+
+	# now plot it again with the legend:
+	plt.legend(legend, loc='best')
+	outfig_handle = input_csv_path.split('/')[-1].split('.')[0] + ".legend.png"
+	plt.savefig(outfig_handle)
+
 	plt.clf()
 
 	# now we can also print out if needed:

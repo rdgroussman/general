@@ -10,7 +10,7 @@
 # >Fragilariopsis_cylindrus_CCMP1102_gbOEU23745_tax635003
 
 # USAGE: seed_sprouder.sh [gene_id] [NCORES] [BITSCORE_CUTOFF] [USEARCH_THRESH] [PENDANT_LENGTH_CUTOFF]
-# EXAMPLE: seed_sprouder.sh ftn_v2 16 45 95 0.7
+# EXAMPLE: seed_sprouter.sh ftn_v2 16 45 95 0.7
 # these two are manual inputs:
 GENE=$1
 NCORES=$2 # e.g., 16 for gross and 8 for match

@@ -24,6 +24,8 @@ parser.add_argument("-e", "--print_header", help="Print header for csv and quit"
 parser.add_argument("-n", "--normfactors_csv", help="Specify path to an csv file with norm factors for your samples.", type=str)
 parser.add_argument("-m", "--machine_runs", help="With normfactors_csv; store true if machine run data is kept separate", action="store_true")
 parser.add_argument("-w", "--write_unknown", help="Write out all the tax_ids in the 'unknown' group and quit", action="store_true")
+parser.add_argument("-x", "--write_edge_counts", help="Write the normalized counts for each edge to specified file", type=str)
+
 
 args = parser.parse_args()
 other_counter = 0
