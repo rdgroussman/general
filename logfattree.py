@@ -16,7 +16,7 @@ from Bio import Phylo
 parser = argparse.ArgumentParser()
 parser.add_argument("input_xml", help="XML-formatted input tree")
 parser.add_argument("-b", "--log_base", help="Log base", type=int, default=2)
-parser.add_argument("-l", "--linear_correct", help="Linear correction factor", type=int, default=2)
+parser.add_argument("-l", "--linear_correct", help="Linear correction factor", type=float, default=2.0)
 
 args = parser.parse_args()
 
