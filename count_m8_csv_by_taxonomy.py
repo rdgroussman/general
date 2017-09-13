@@ -18,7 +18,7 @@ def parse_treecolor_info(TCInfo):
 	for line in TCInfo:
 		line_elts = line.split(",")
 		ListFile = line_elts[0]	# the group name
-		ListFilePath = r'/Users/rgroussman/Dropbox/Armbrust/bioinfo/scripts/treecolor/MarineRef2_plus_internal/' + ListFile.strip()
+		ListFilePath = '/'.join(args.treecolor_csv.split('/')[0:-1]) + '/' + ListFile.strip()
 		group_name = ListFile.split(".")[0]	# pop off the prefix, this is the clade name
 		tax_file = open(ListFilePath, 'r') # open the list file
 		tax_set = set([])
