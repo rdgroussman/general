@@ -44,5 +44,6 @@ for line in input_csv:
 	if score >= args.score and sCseg >= args.sCseg:
 		outfile.write(line)
 
+print "All finished! Output written to", args.out_file
 input_csv.close()
 outfile.close()

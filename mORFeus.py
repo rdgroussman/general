@@ -7,12 +7,22 @@
 mORFeus.py
 
 Takes as input a FASTA file with translated input, e.g:
->1_1
+>seq1_frame1
 IA*RKHWRQRWPR*LLSWRLPSWIWKRRRKE*STSKALQRPAKSRSSS*LLRPRNTRMRR
 LLTWRGSRRRSNLSERQSRN
 
-Will output each ORF as its own sequence. Length-cutoff criteria
-and Met-start arguments can be provided.
+Will output each ORF as its own sequence, using supplied length-cutoff criteria:
+(cutoff of 15 aa shown in example; for actual practice we tend to use cutoffs of 40aa or greater)
+
+mORFeus.py -l 15 test.fasta
+
+Will return test.orfs15.fasta with the following sequences:
+>seq1_frame1_1
+LLSWRLPSWIWKRRRKE
+>seq1_frame1_2
+STSKALQRPAKSRSSS
+>seq1_frame1_3
+LLRPRNTRMRRLLTWRGSRRRSNLSERQSRN
 
 """
 
