@@ -48,6 +48,9 @@ ILLUMINACLIP:"$ADAPTER_FILE":2:30:10:1:true \
 MAXINFO:135:0.5 LEADING:3 TRAILING:3 MINLEN:60 AVGQUAL:20 >>"$3.trimmomatic.log" 2>&1
 
 # Merge pairs
+# -r 150 : read length 150
+# -f 250 : fragment length 250
+# -s 25  : fragment length stdev (~10% of fragment length)
 flash --version >"$3.flash.log" 2>&1  # record flash version
 echo "flash --compress-prog=pigz --suffix=gz -o $3.flash -r 150 -f 250 -s 25 --interleaved-output $3.1.paired.trim.fastq.gz $3.2.paired.trim.fastq.gz" >>"$3.flash.log" 2>&1
 flash --compress-prog=pigz --suffix=gz -o "$3.flash" -r 150 -f 250 -s 25 --interleaved-output "$3.1.paired.trim.fastq.gz" "$3.2.paired.trim.fastq.gz" >>"$3.flash.log" 2>&1

@@ -25,8 +25,8 @@ MARINEREF_PATH="/mnt/nfs/ryan/MarineRef/MarineRefII_ALL_SEQS.fa"
 MARINEREF_INFO="/mnt/nfs/ryan/MarineRef/MarineRefII_seqIDinfo.csv"
 USEARCH_PATH="/mnt/nfs/home/rgrous83/bin/usearch"
 PPLACER_PATH="/mnt/nfs/home/rgrous83/bin/pplacer"
-SUBJECT_DIR="/mnt/nfs/ryan/Gradients1/morfeus"
-SUBJECT_LIST="/mnt/nfs/ryan/Gradients1/morfeus/gradients1_morfeus_handles.txt"
+SUBJECT_DIR="/mnt/nfs/ryan/Gradients1/mORFeus_v2"
+SUBJECT_LIST="/mnt/nfs/ryan/Gradients1/mORFeus_v2/gradients1_morfeus_handles.txt"
 TAX_DB="/mnt/nfs/home/rgrous83/NCBI/taxonomy.db"
 
 cd $BLOOM_DIR
@@ -56,7 +56,7 @@ hmmbuild $GENE.hmm $GENE.jackhmmer.fasta
 mkdir ../hmmer_env; cp $GENE.hmm ../hmmer_env; cd ../hmmer_env
 
 function hmmer_time {
-SUBJECT_FASTA="$1"_combined.6tr.orfs40.fasta.gz
+SUBJECT_FASTA="$1".6tr.orfs40.fasta.gz
 hmmsearch -T $BITSCORE_CUTOFF --incT $BITSCORE_CUTOFF --cpu $NCORES --tblout $GENE.$1.hmm_out.tab -A $GENE.$1.query.sto $GENE.hmm $SUBJECT_DIR/$SUBJECT_FASTA
 }
 
@@ -122,11 +122,11 @@ REFPKG="../hmmer_ref/$GENE.refpkg"
 function pplacer_run {
 	hmmalign -o $GENE.$1.aln.sto --mapali ../hmmer_ref/$GENE.all_ref.id"$USEARCH_THRESH".aln.fasta ../hmmer_ref/$GENE.ref.hmm $GENE."$1".query.sto
 	seqmagick convert $GENE.$1.aln.sto $GENE.$1.aln.fasta
-	$PPLACER_PATH/pplacer -c $REFPKG --max-pend $PENDANT_LENGTH_CUTOFF --keep-at-most 1 $GENE.$1.aln.fasta
+	$PPLACER_PATH/pplacer -c $REFPKG --keep-at-most 1 $GENE.$1.aln.fasta
 }
 
 for subject in $(cat $SUBJECT_LIST); do
   pplacer_run $subject
 done
 
-tar czf $GENE.diel1.jplace.tar.gz *jplace
+tar czf $GENE.gradients1.jplace.tar.gz *jplace
