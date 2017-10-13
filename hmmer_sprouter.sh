@@ -71,7 +71,6 @@ seqmagick convert $GENE.$1.aln.sto $GENE.$1.aln.fasta
 $PPLACER_PATH/pplacer -c $REFPKG --keep-at-most 1 $GENE.$1.aln.fasta
 }
 
-
 # run hmmer & pplacer against environmental seqs:
 for subject in $(cat $SUBJECT_LIST); do
 hmmer_time_env $subject
@@ -86,8 +85,8 @@ mkdir ../summed_csv
 for sample in $(cat ../sample_list.txt); do
 guppy to_csv -o ../summed_csv/$GENE.$sample.taxID.csv $GENE.$sample.*.jplace
 done
-cd ../summed_csv
 
+cd ../summed_csv
 TREECOLORS="/mnt/nfs/home/rgrous83/scripts/treecolor/MarineRef2_plus_internal/treecolors_w_proks.csv"
 NORM_FACTORS="/mnt/nfs/ryan/Gradients1/gradients1.norm_factors.csv"
 count_pplacer_csv_by_taxonomy.py -eg -c $TREECOLORS -n $NORM_FACTORS $(ls $GENE.*.taxID.csv | head -1) > $GENE.g1.counts_results.csv # make a header
