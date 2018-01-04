@@ -62,10 +62,22 @@ with open(TAXA_FRACTS_PATH, 'r') as taxa_fracts:
 		added_values = []
 		# column_names =
 		for column in ["tax_name"]:
-			added_values.append(TaxDict[tax_id][column])
+			if tax_id in TaxDict:
+				added_values.append(TaxDict[tax_id][column])
+			else:
+				TaxDict[tax_id] = {}
+				TaxDict[tax_id]["tax_name"] = "NA"
+				TaxDict[tax_id]["tax_id"] = tax_id
+				TaxDict[tax_id]["rank"] = "NA"
+				for i in range(len(column_data)):
+					TaxDict[tax_id][column_data[i][1].strip('""')] = "NA"
+				added_values.append(TaxDict[tax_id][column])
 		for column in kept_fields:
 			group_tax = TaxDict[tax_id][column]
 			if group_tax != '':
-				added_values.append(TaxDict[group_tax]["tax_name"])
+				if group_tax in TaxDict:
+					added_values.append(TaxDict[group_tax]["tax_name"])
+				else:
+					added_values.append("NA")
 		merged_columns = ",".join(added_values)
 		out_csv.write(tax_id + "," + merged_columns + "\n")
