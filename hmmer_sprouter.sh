@@ -87,7 +87,7 @@ guppy to_csv -o ../summed_csv/$GENE.$sample.taxID.csv $GENE.$sample.*.jplace
 done
 
 cd ../summed_csv
-TREECOLORS="/mnt/nfs/home/rgrous83/scripts/treecolor/MarineRef2_plus_internal/treecolors_w_proks.csv"
-NORM_FACTORS="/mnt/nfs/ryan/Gradients1/gradients1.norm_factors.csv"
+TREECOLORS="/mnt/nfs/home/rgrous83/scripts/treecolor/MarineRef2_plus_internal/treecolors_w_proks2.csv"
+NORM_FACTORS="/mnt/nfs/ryan/Gradients1/gradients1.norm_factor_SUMS.csv"
 count_pplacer_csv_by_taxonomy.py -eg -c $TREECOLORS -n $NORM_FACTORS $(ls $GENE.*.taxID.csv | head -1) > $GENE.g1.counts_results.csv # make a header
 for csv in $(ls $GENE.*.taxID.csv); do count_pplacer_csv_by_taxonomy.py  -g -c $TREECOLORS $csv -n $NORM_FACTORS >> $GENE.g1.counts_results.csv; done
