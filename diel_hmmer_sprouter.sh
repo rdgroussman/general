@@ -25,6 +25,7 @@ mkdir hmmer_ref; cd $BASE_DIR/hmmer_ref
 GENE=$1
 hmmsearch -T $BITSCORE_CUTOFF --incT $BITSCORE_CUTOFF --cpu $NCORES --tblout $GENE.MarRef2Plus.hmm_out.tab -A "$GENE".MarRef2Plus.query.sto $hmm_profile $REFSEQS_PATH
 seqmagick convert $GENE.MarRef2Plus.query.sto $GENE.MarRef2Plus.query.fasta
+sed -i "s/'//g" $GENE.MarRef2Plus.query.fasta
 $USEARCH_PATH/usearch -sortbylength $GENE.MarRef2Plus.query.fasta -fastaout $GENE.MarRef2Plus.lensort.fasta
 $USEARCH_PATH/usearch -cluster_fast $GENE.MarRef2Plus.lensort.fasta -id 0.$USEARCH_THRESH -centroids $GENE.MarRef2Plus.id$USEARCH_THRESH.fasta -uc $GENE.MarRef2Plus.id$USEARCH_THRESH.uc
 hmmalign -o $GENE.MarRef2Plus.id$USEARCH_THRESH.aln.sto $hmm_profile $GENE.MarRef2Plus.id$USEARCH_THRESH.fasta
