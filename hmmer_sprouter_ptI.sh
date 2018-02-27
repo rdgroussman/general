@@ -1,4 +1,4 @@
-### hmmer_sprouter ###
+### hmmer_sprouter_ptI.sh ###
 
 GENE=$1
 BASE_DIR=/mnt/nfs/ryan/Gradients1/runs/$GENE
@@ -10,9 +10,6 @@ NCORES=$2
 BITSCORE_CUTOFF=$3
 USEARCH_THRESH=$4
 USEARCH_PATH="/mnt/nfs/home/rgrous83/bin/usearch"
-PPLACER_PATH="/mnt/nfs/home/rgrous83/bin/pplacer"
-SUBJECT_DIR="/mnt/nfs/ryan/Gradients1/mORFeus_v2"
-SUBJECT_LIST="/mnt/nfs/ryan/Gradients1/mORFeus_v2/gradients1_morfeus_handles.txt"
 
 # the seed hmm_profile should have this format: $GENE.hmm
 hmm_profile=$BASE_DIR/$GENE.hmm
@@ -59,35 +56,8 @@ taxit create -l $GENE -P $GENE.refpkg \
 # build the hmm profile:
 REFPKG="$BASE_DIR/$GENE.refpkg"
 
-# Re-situation directories
-mkdir hmmer_env; cd hmmer_env
-
-# Use the hmm profile to search against the environmental data; align to the profile and run pplacer
-function hmmer_time_env {
-SUBJECT_FASTA="$1".6tr.orfs40.fasta.gz
-hmmsearch -T $BITSCORE_CUTOFF --incT $BITSCORE_CUTOFF --cpu $NCORES --tblout $GENE.$1.hmm_out.tab -A $GENE.$1.query.sto $ref_hmm $SUBJECT_DIR/$SUBJECT_FASTA
-hmmalign -o $GENE.$1.aln.sto --mapali ../hmmer_ref/$GENE.MarRef2Plus.id$USEARCH_THRESH.aln.fasta $ref_hmm $GENE."$1".query.sto
-seqmagick convert $GENE.$1.aln.sto $GENE.$1.aln.fasta
-$PPLACER_PATH/pplacer -c $REFPKG --keep-at-most 1 $GENE.$1.aln.fasta
-}
-
-# run hmmer & pplacer against environmental seqs:
-for subject in $(cat $SUBJECT_LIST); do
-hmmer_time_env $subject
-done
-
-# getting a sample list (bloom)
-cd $BASE_DIR/hmmer_env
-ls $GENE.*jplace | awk -F. {'print $2'} | sort | uniq > ../sample_list.txt
-mkdir ../summed_csv
-
-# process CSVs by summed samples:
-for sample in $(cat ../sample_list.txt); do
-guppy to_csv -o ../summed_csv/$GENE.$sample.taxID.csv $GENE.$sample.*.jplace
-done
-
-cd ../summed_csv
-TREECOLORS="/mnt/nfs/home/rgrous83/scripts/treecolor/MarineRef2_plus_internal/treecolors_w_proks2.csv"
-NORM_FACTORS="/mnt/nfs/ryan/Gradients1/gradients1.norm_factor_SUMS.csv"
-count_pplacer_csv_by_taxonomy.py -eg -c $TREECOLORS -n $NORM_FACTORS $(ls $GENE.*.taxID.csv | head -1) > $GENE.g1.counts_results.csv # make a header
-for csv in $(ls $GENE.*.taxID.csv); do count_pplacer_csv_by_taxonomy.py  -g -c $TREECOLORS $csv -n $NORM_FACTORS >> $GENE.g1.counts_results.csv; done
+# convert the Newick tree to XML:
+java -cp ~/bin/forester.jar org.forester.application.phyloxml_converter -f=nn -m hmmer_ref/$GENE.tree $GENE.ref_tree.xml
+# color the tree by phylogeny:
+TREECOLORS="treecolors_w_proks2.csv"
+treecolor2.py -a -c $TREECOLORS -o $GENE.all.ref_tree.col.xml $GENE.ref_tree.xml

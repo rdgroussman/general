@@ -46,7 +46,7 @@ def parse_header(defline):
 	def_elts = defline.split("_")
 	for elt in def_elts:
 		if elt.startswith("tax"):
-			taxid=elt[3:]
+			taxid=elt.strip()[3:]
 			if "/" in taxid: # some of the entries have a taxid followed by slash
 				taxid = taxid.split("/")[0]
 			return taxid

@@ -61,11 +61,11 @@ outfile.write(",".join(header_elts))
 for line in input_counts:
 	line_elts = line.split("\t")
 	contig_id = line_elts[0]
-	out_line = [contig_id]
+	out_elts = [contig_id]
 	for i in range(len(line_elts)):
 		if i > 0:
 			norm_factor = get_normfactor(i)
 			corrected_count = norm_factor * float(line_elts[i].strip())
-			out_line.append(str(corrected_count))
-	out_line.append("\n")
-	outfile.write(",".join(out_line))
+			out_elts.append(str(int(round(corrected_count))))
+	out_line = ",".join(out_elts) + "\n"
+	outfile.write((out_line))

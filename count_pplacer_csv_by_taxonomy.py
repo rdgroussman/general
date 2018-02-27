@@ -319,6 +319,7 @@ def main():
 	global TaxaCountsDict
 	global summed_sample_name
 	global NormFactorsDict
+	global outgroup_counter
 
 	# load csv file containing list and color information
 	if args.treecolor_csv != None:
