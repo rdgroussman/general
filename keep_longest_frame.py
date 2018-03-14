@@ -30,11 +30,10 @@ args = parser.parse_args()
 
 def build_output_handle(infile_path, min_pep_length):
 	handle_elts = infile_path.split(".")
-	handle_mod = "orfs" + str(args.min_pep_length)
+	handle_mod = "bf" + str(args.min_pep_length)
 	handle_elts.insert(-1,handle_mod)
 	outfile_path = ".".join(handle_elts)
 	return outfile_path
-
 
 def process_seq(seq_record):
 
@@ -82,7 +81,7 @@ output_fasta_handle = build_output_handle(args.fasta_file, args.min_pep_length)
 output_file = open(output_fasta_handle, 'w')
 
 reset_6tr_dict()
-first_seq = True
+core_record_id = False
 # for each sequence in the fasta file;
 for seq_record in SeqIO.parse(fasta_file, "fasta"):
 	process_seq(seq_record)
