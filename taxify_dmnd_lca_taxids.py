@@ -72,7 +72,7 @@ for line in taxid_counts:
 	# write out in this order: "tax_id,tax_name,rank,count"
 	outline = ",".join([str(tax_id),tax_name,rank,str(count),"\n"])
 	out_csv.write(outline)
-	
+
 # now open taxa_fracts:
 # with open(TAXA_FRACTS_PATH, 'r') as taxa_fracts:
 # 	for line in taxa_fracts:

@@ -43,12 +43,13 @@ guppy to_csv -o ../summed_csv/$GENE.$sample.taxID.csv $GENE.$sample.*.jplace
 done
 
 # now summarize the count information by treecolor groups:
+# this will count each placement within a definined group (e.g., 'Bacillariophyta')
 cd ../summed_csv
 TREECOLORS="/mnt/nfs/home/rgrous83/scripts/treecolor/MarineRef2_plus_internal/treecolors_w_proks2.csv"
 NORM_FACTORS="/mnt/nfs/ryan/Gradients1/gradients1.norm_factor_SUMS.csv"
 count_pplacer_csv_by_taxonomy.py -eg -c $TREECOLORS -n $NORM_FACTORS $(ls $GENE.*.taxID.csv | head -1) > $GENE.g1.counts_results.csv # make a header
 for csv in $(ls $GENE.*.taxID.csv); do count_pplacer_csv_by_taxonomy.py  -g -c $TREECOLORS $csv -n $NORM_FACTORS >> $GENE.g1.counts_results.csv; done
 
-# normalize by RPx13:
+# normalize the raw counts by counts of 13 ribosomal proteins (RPx13):
 RPx13="/mnt/nfs/ryan/Gradients1/RP/RPx13.g1.rp_avg.csv"
 normalize_by_RP.py -n $BASE_DIR/summed_csv/$GENE.g1.counts_results.csv -d $RPx13 -o $BASE_DIR/$GENE.g1.counts_results.RPx13_norm.csv
