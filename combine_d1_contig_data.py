@@ -30,8 +30,7 @@ def parse_taxacsv_header(header):
 	header_elts = header.split(",")
 	for i in range(len(header_elts)):
 		elt = header_elts[i].strip('"')
-		if elt in kept_fields:
-			column_data.append((i, elt))
+		column_data.append((i, elt))
 	return column_data
 
 def init_taxa_dict():
@@ -100,6 +99,8 @@ def taxify_taxids(TaxDict, tax_id):
 
 	if tax_id in TaxDict.keys():
 		return TaxDict[tax_id]["tax_name"],TaxDict[tax_id]["rank"]
+	elif tax_id not in TaxDict.keys():
+		return "NA","NA"
 
 def parse_normed_counts(ContigData, counts_data):
 
@@ -154,7 +155,6 @@ counts_data = open((pfam_id + ".d1.normed_counts.csv"),'r')
 
 # load in taxa.csv file and parse
 TaxDict = init_taxa_dict()
-
 # Start building a ContigData where we can store data for each contig (with contig_ids as keys)
 ContigData = {}
 # Create a nested dict for each contig:

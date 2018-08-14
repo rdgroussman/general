@@ -46,7 +46,7 @@ def get_machine_run(infile_path):
 	"""
 
 	# Cutting this suffix off of the path: "_combined.6tr.fasta"
-	suffix = ".6tr.fasta"
+	suffix = ".6tr.bf40.fasta"
 	return infile_path.replace(suffix,'')
 
 def process_seq(seq_record):
