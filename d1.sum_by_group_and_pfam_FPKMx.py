@@ -2,12 +2,16 @@
 
 
 
-# d1.sum_by_group_and_pfam.py
+# d1.sum_by_group_and_pfam_FPKMx.py
 """
-# what we want:
+# NEW FOR d1.sum_by_group_and_pfam2.py:
+# compute FPKMx-normalized values as well for each time point
+# (previous version only does summed standard-normalized counts)
+
 # counts summed up based on pfam_name and phylo_group (e.g., all counts for haptophyte ferritin)
 # we need to sum up THREE NUMBERS for EACH of 24 time points:
 # max, min, and mean (for our n=2 samples)
+
 
 # and we can compute more advanced statistics (stdev? sde?) for the 8 points within each time
 """
@@ -15,6 +19,8 @@
 # hard-coded paths:
 time_dict_path = "/Users/rgroussman/data/SCOPE/diel1/diel1_timepoints.csv"
 
+# total group counts, M:
+M_path = "/Users/rgroussman/data/SCOPE/diel1/assemblies/kallisto/FPKMx/summed_counts/d1.cumulative_counts_by_tax_id.csv"
 
 
 import argparse
@@ -49,6 +55,12 @@ def parse_all_dat_row(CountsDict, row):
 	nt_id = row['contig_id']
 	pfam_name = row['pfam_name']
 	phylo_group = row['phylo_group']
+	# now, if phylo_group = NA we can go ahead and skip everything b/c we don't care about these nobodies:
+	if phylo_group == "NA":
+		return
+	phylo_id = row['phylo_id']
+	contig_length = float(row['contig_length'])
+	k = contig_length / 1000 # this give us the length in KILOBASES
 	# add phylo_group as first level in the dict:
 	if phylo_group not in CountsDict.keys():
 		CountsDict[phylo_group] = {}
@@ -58,12 +70,22 @@ def parse_all_dat_row(CountsDict, row):
 	for sample_name in samples:
 		fixed_name = fix_sample_id(sample_name)
 		clock_time,abs_time = get_times(fixed_name)
-		CountsDict[phylo_group][pfam_name]['clock_time'][clock_time].append(int(row[sample_name]))
-		CountsDict[phylo_group][pfam_name]['abs_time'][abs_time].append(int(row[sample_name]))
+		# and then we can grab the value of M (millions of bases) for the relevant phylo_group
+		Mx = (float(MDict[phylo_id][sample_name]) / 1e6) # and divide by a million to get M
+		# now, instead of just adding the counts, we will compute FpKM first (fragments per kilobase per million reads)
+		if Mx == 0:
+			FpKMx = 0
+		elif Mx > 0:
+			FpKMx = float(row[sample_name]) / k / Mx
+			# and then we can add this to the relevant dict slot:
+		CountsDict[phylo_group][pfam_name]['clock_time'][clock_time].append(FpKMx)
+		CountsDict[phylo_group][pfam_name]['abs_time'][abs_time].append(FpKMx)
 
-		# print sample_name, clock_time, abs_time
-		# CountsDict[phylo_group][pfam_name]['clock']
 
+def parse_M_data(MDict, row):
+
+	tax_id = row['tax_id']
+	MDict[tax_id] = row
 
 def compute_stats(CountsDict):
 
@@ -79,17 +101,22 @@ def compute_stats(CountsDict):
 				StatsDict[phylo_group][pfam_name]['clock_time'][clock_time]['min'] = min(CountsDict[phylo_group][pfam_name]['clock_time'][clock_time])
 				StatsDict[phylo_group][pfam_name]['clock_time'][clock_time]['mean'] = np.mean(CountsDict[phylo_group][pfam_name]['clock_time'][clock_time])
 				StatsDict[phylo_group][pfam_name]['clock_time'][clock_time]['stdev'] = np.std(CountsDict[phylo_group][pfam_name]['clock_time'][clock_time])
+				StatsDict[phylo_group][pfam_name]['clock_time'][clock_time]['n_contigs'] = len(CountsDict[phylo_group][pfam_name]['clock_time'][clock_time])
+
 			for abs_time in CountsDict[phylo_group][pfam_name]['abs_time']:
 				StatsDict[phylo_group][pfam_name]['abs_time'][abs_time]['max'] = max(CountsDict[phylo_group][pfam_name]['abs_time'][abs_time])
 				StatsDict[phylo_group][pfam_name]['abs_time'][abs_time]['min'] = min(CountsDict[phylo_group][pfam_name]['abs_time'][abs_time])
 				StatsDict[phylo_group][pfam_name]['abs_time'][abs_time]['mean'] = np.mean(CountsDict[phylo_group][pfam_name]['abs_time'][abs_time])
 				StatsDict[phylo_group][pfam_name]['abs_time'][abs_time]['sum'] = sum(CountsDict[phylo_group][pfam_name]['abs_time'][abs_time])
+				StatsDict[phylo_group][pfam_name]['abs_time'][abs_time]['stdev'] = np.std(CountsDict[phylo_group][pfam_name]['abs_time'][abs_time])
+				StatsDict[phylo_group][pfam_name]['abs_time'][abs_time]['n_contigs'] = len(CountsDict[phylo_group][pfam_name]['abs_time'][abs_time])
+
 
 def output_csv(ContigData, out_file_name):
 
 
-	clock_time_csv = open((out_file_name + ".clock_time.csv"), 'w')
-	header = ['phylo_group', 'pfam_name', 'time', 'mean', 'stdev','sum']
+	clock_time_csv = open((out_file_name + ".clock_time.FPKMx.csv"), 'w')
+	header = ['phylo_group', 'pfam_name', 'time', 'mean', 'stdev','sum','n_contigs']
 	clock_time_csv.write(",".join(header) + "\n")
 
 	# first, print out clock_time counts to its own file:
@@ -97,12 +124,13 @@ def output_csv(ContigData, out_file_name):
 		for pfam_name in CountsDict[phylo_group]:
 			for clock_time in CountsDict[phylo_group][pfam_name]['clock_time']:
 				out_fields = [phylo_group, pfam_name, str(clock_time)]
-				for stat in ['mean', 'stdev', 'sum']:
+				for stat in ['mean', 'stdev', 'sum','n_contigs']:
 					out_fields.append(str(StatsDict[phylo_group][pfam_name]['clock_time'][clock_time][stat]))
 				clock_time_csv.write(",".join(out_fields)+ "\n")
 
-	abs_time_csv = open((out_file_name + ".abs_time.csv"), 'w')
-	header = ['phylo_group', 'pfam_name', 'time', 'mean', 'max', 'min', 'sum']
+	# and for absolute time:
+	abs_time_csv = open((out_file_name + ".abs_time.FPKMx.csv"), 'w')
+	header = ['phylo_group', 'pfam_name', 'time', 'mean', 'max', 'min', 'stdev','sum','n_contigs']
 	abs_time_csv.write(",".join(header) + "\n")
 
 	# then, print out abs_time counts:
@@ -110,13 +138,13 @@ def output_csv(ContigData, out_file_name):
 		for pfam_name in CountsDict[phylo_group]:
 			for abs_time in CountsDict[phylo_group][pfam_name]['abs_time']:
 				out_fields = [phylo_group, pfam_name, str(abs_time)]
-				for stat in ['mean', 'max', 'min', 'sum']:
+				for stat in ['mean', 'max', 'min', 'stdev','sum','n_contigs']:
 					out_fields.append(str(StatsDict[phylo_group][pfam_name]['abs_time'][abs_time][stat]))
 				abs_time_csv.write(",".join(out_fields)+ "\n")
 
 	# and finally, we can also output a FPKMx file:
 
-# step 0: initialize the TimeDict:
+# step 0a: initialize the TimeDict:
 TimeDict = {}
 with open(time_dict_path, 'r') as time_csv:
 	header = next(time_csv) # skip the header:
@@ -129,13 +157,24 @@ with open(time_dict_path, 'r') as time_csv:
 		TimeDict[sample_name]["clock_time"] = clock_time
 		TimeDict[sample_name]["abs_time"] = abs_time
 
+# step 0b: Load in 'M' counts file:
+MDict = {}
+M_data = csv.DictReader(open(M_path))
+for row in M_data:
+	parse_M_data(MDict, row)
+
 # step 1: load in an *all_data.csv file:
 CountsDict = {}
 all_data = csv.DictReader(open(args.csv))
 for row in all_data:
 	parse_all_dat_row(CountsDict, row)
 
-# step 2: compute stats for clock time and abs time:
+# step 2: compute FPMKx for each time point:
+FPKMxDict = {}
+
+
+
+# step 2: compute stats for clock time and abs time
 StatsDict = {}
 compute_stats(CountsDict)
 # print CountsDict
